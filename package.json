@@ -1,0 +1,18 @@
+{
+  "name": "googleapps-nohost",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small Google Apps Script web app foundation for an Web App.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "push": "npm run build && node scripts/push.mjs",
+    "deploy": "npm run push && node scripts/deploy.mjs",
+    "bootstrap:google": "bash scripts/bootstrap-google.sh"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.3.0",
+    "@types/google-apps-script": "^2.0.12",
+    "typescript": "^7.0.2"
+  }
+}

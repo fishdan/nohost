@@ -1,0 +1,84 @@
+# Progress Log
+
+## 2026-08-16 — Public web app verified
+
+- GitHub production workflow succeeded after the clasp OAuth fallback was merged.
+- Created a separate versioned production deployment because the prior configured ID was the private HEAD/test deployment.
+- Updated GitHub `CLASP_DEPLOYMENT_ID` to the versioned public deployment.
+- Verified the public `/exec` URL without authentication; it returns the hello-world page and HTTP 200.
+- Spec `0.003-public-web-deployment` is complete.
+
+## 2026-08-16 — Clasp CI authentication fallback
+
+- Production workflow run `31962681908` reached deployment but failed because clasp `--adc` does not recognize GitHub external-account credentials.
+- Updated the workflow to load encrypted `CLASPRC_JSON` credentials instead, and authenticated clasp as `dan@people4liberty.org`.
+- Stored the resulting clasp OAuth configuration in the GitHub `production` environment as an encrypted secret; it is not present in the repository.
+
+## 2026-08-16 — Apps Script deployer access granted
+
+- Shared the Apps Script project with `clasp-deploy@clasp-website-demo.iam.gserviceaccount.com` as Editor.
+- The public deployment prerequisites are now configured; production deployment remains gated on PR review and merge to `main`.
+
+## 2026-08-16 — Public deployment infrastructure configured
+
+- Reauthenticated the remote Cloud CLI as `dan@people4liberty.org`, the project-owner account.
+- Enabled required APIs and created the `clasp-deploy` service account, GitHub workload-identity pool, and lowercase `google-apps` OIDC provider in `clasp-website-demo`.
+- Corrected `scripts/bootstrap-google.sh` so its default provider ID complies with Google’s lowercase/dash naming rules.
+- Configured the GitHub `production` environment variables and encrypted `CLASP_PROJECT_JSON` secret.
+- Remaining prerequisite: share the Apps Script project with `clasp-deploy@clasp-website-demo.iam.gserviceaccount.com` as Editor.
+
+## 2026-08-16 — Public deployment Cloud setup blocked
+
+- Confirmed the Apps Script project is linked to standard Cloud project `clasp-website-demo`.
+- Ran `GOOGLE_CLOUD_PROJECT_ID=clasp-website-demo GITHUB_REPOSITORY=fishdan/googleApps bash scripts/bootstrap-google.sh`.
+- No resources were created: `fishdan@gmail.com` lacks permission to enable APIs or manage IAM in the project.
+
+## 2026-08-16 — Public deployment preparation
+
+- Created SpecKit entry `0.003-public-web-deployment` and documented the one-time Google/GitHub production configuration.
+- Confirmed `appsscript.json` already requests anonymous web-app access and the production workflow is configured to deploy only from `main`.
+- Validation: `npm run build`, `npm test`, and `git diff --check` passed.
+- Blocked on external configuration: GitHub `production` has no variables or secrets, and the Apps Script project's standard Google Cloud project is not discoverable from the current credentials.
+
+## 2026-08-16 — Hello-world specification completed
+
+- Verified the Apps Script `/dev` web-app deployment in the browser.
+- Confirmed the rendered page displays “Hello, world!” with the expected placeholder content and styling.
+- Spec `0.002-hello-world-page` is complete.
+
+## 2026-08-16 — Apps Script review checks
+
+- Ran `git diff --check`, `npm run build`, `npm test`, `npx clasp status`, `npx clasp deployments`, and `npx clasp open-script`.
+- All local checks passed. The project has one existing HEAD deployment; no additional deployment was created.
+- The `/dev` test endpoint responds and redirects unauthenticated requests to Google sign-in, as expected for a private test deployment.
+
+## 2026-08-16 — Apps Script hello-world upload
+
+- Enabled Apps Script API access and pushed the built bundle with `npx clasp push --force`.
+- Upload succeeded for `appsscript.json`, `Code.js`, `index.html`, `scripts.html`, and `styles.html`.
+- `npx clasp status` reports no untracked files.
+
+## 2026-08-16 — Apps Script account connection
+
+- Completed remote `clasp` OAuth login using the user-provided callback; credentials remain only in the remote user's `~/.clasprc.json`.
+- Found one accessible Apps Script project, `nohost Web App`, and configured the ignored local `.clasp.json` with its Script ID and `dist` root.
+- `npm run build` passed. `npx clasp status` reached the project, but `npx clasp push --force` is blocked until Apps Script API access is enabled at `https://script.google.com/home/usersettings`.
+
+## 2026-08-16 — Apps Script hello-world page
+
+- Added SpecKit entry `0.002-hello-world-page`.
+- Replaced the foundation placeholder homepage with a responsive “Hello, world!” page and updated the Apps Script document title.
+- Added automated assertions for the generated page content.
+- Validation: `npm run build` and `npm test` passed.
+
+## 2026-08-16 — Monthly dependency vulnerability audit
+
+- Ran `npm audit --audit-level=high` during session startup.
+- Findings: 5 moderate vulnerabilities in the transitive `uuid` dependency chain used by `@google/clasp`; no high or critical vulnerabilities reported.
+- Remediation: not applied because `npm audit fix --force` would introduce a breaking `@google/clasp` downgrade. Revisit with an intentional dependency update task.
+
+## 2026-08-13 — Apps Script foundation
+
+- Added the initial TypeScript/HTML/CSS Google Apps Script web app foundation, npm build/test commands, safe clasp template, bootstrap script, documentation, specification, and GitHub Actions CI/deploy scaffolding.
+- Validation: `npm install`, `npm run build`, and `npm test` are required before commit.
+- Google authentication, Apps Script API access, script ID, service-account sharing, and production deployment ID remain external configuration.

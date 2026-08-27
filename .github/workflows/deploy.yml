@@ -1,0 +1,50 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_DEPLOY_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+      - name: Write clasp project configuration
+        env:
+          CLASP_PROJECT_JSON: ${{ secrets.CLASP_PROJECT_JSON }}
+        run: printf '%s' "$CLASP_PROJECT_JSON" > .clasp.json
+      - name: Write clasp OAuth credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+      - name: Push and deploy Apps Script
+        env:
+          CLASP_DEPLOYMENT_ID: ${{ vars.CLASP_DEPLOYMENT_ID }}
+        run: npm run deploy

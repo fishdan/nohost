@@ -1,0 +1,58 @@
+# Handoff
+
+No active handoff. The hello-world specification and browser verification are complete.
+
+## 2026-08-16 — Public deployment complete
+
+- The versioned public `/exec` deployment is live and verified without sign-in.
+- GitHub Actions is configured to redeploy the stable public deployment ID.
+- Spec `0.003-public-web-deployment` is complete.
+
+## 2026-08-16 — Clasp authentication fix awaiting merge
+
+- The first public deployment workflow failed only at `clasp --adc`; Google Cloud OIDC itself succeeded.
+- Workflow and README are patched to use encrypted `CLASPRC_JSON` fallback credentials.
+- `CLASPRC_JSON` is configured in GitHub production from the authorized `dan@people4liberty.org` clasp login.
+- Recommended next action: merge the CI authentication fix PR, then rerun and verify the public `/exec` URL.
+
+## 2026-08-16 — Public deployment PR ready
+
+- Apps Script deployer service account has Editor access.
+- Cloud project, workload identity, GitHub production variables, and encrypted clasp configuration are configured.
+- Production deployment is intentionally pending PR merge to `main`.
+
+## 2026-08-16 — Public deployment infrastructure ready for sharing
+
+- Branch: `agent/public-web-deployment`
+- Current task: complete the public versioned deployment through GitHub Actions.
+- Files modified: `README.md`, `scripts/bootstrap-google.sh`, and SpecKit files under `specs/0/0.003-public-web-deployment/`.
+- Cloud/GitHub setup: complete for project `clasp-website-demo`; production variables and encrypted clasp configuration are configured.
+- Remaining blocker: share the Apps Script project with `clasp-deploy@clasp-website-demo.iam.gserviceaccount.com` as Editor.
+- Recommended next action: use Apps Script’s Share dialog to grant that service account Editor access, then run CI/deploy after the PR is merged.
+
+## 2026-08-16 — Public deployment Cloud permissions blocked
+
+- Branch: `agent/public-web-deployment`
+- Current task: configure Cloud/GitHub deployment and publish the versioned public web app.
+- Files modified: `README.md`; new SpecKit files under `specs/0/0.003-public-web-deployment/`.
+- Validation: build, tests, and diff checks pass.
+- Blocker: `fishdan@gmail.com` cannot enable APIs or manage IAM in Cloud project `clasp-website-demo`; the bootstrap script created no resources.
+- Recommended next action: grant that account project-level administration, or run the bootstrap script while authenticated as a project owner.
+
+## 2026-08-16 — Public deployment preparation pending
+
+- Branch: `agent/public-web-deployment`
+- Current task: make the versioned Apps Script web app publicly accessible through GitHub Actions.
+- Files modified: `README.md`; new SpecKit files under `specs/0/0.003-public-web-deployment/`.
+- Validation: `npm run build`, `npm test`, and `git diff --check` passed.
+- Blocker: GitHub production environment has no configuration. Need the Apps Script project's standard Google Cloud project ID, then bootstrap/confirm workload identity and service account before setting GitHub variables and secrets.
+- Recommended next action: provide the Cloud project ID from Apps Script Project Settings → Google Cloud Platform (GCP) Project, or choose which accessible Cloud project should own the deployment integration.
+
+## 2026-08-16 — Apps Script connection complete
+
+- Branch: `main`
+- Current task: push the hello-world bundle to the authenticated Apps Script project.
+- Files modified: ignored local `.clasp.json`; no tracked source changes in this connection step.
+- Validation: `npm run build` passed; `npx clasp push --force` succeeded; `npx clasp status` reports no untracked files.
+- Known issue: none for the upload connection.
+- Recommended next action: open the `/dev` test URL while signed into the authorized Google account; create a versioned public deployment only after confirming the access policy.
