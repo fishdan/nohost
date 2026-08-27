@@ -27,39 +27,55 @@ It is never ok to have a .claude, .codex, .gemini or any other vendor specific f
 
 ---
 
-# Google Apps Script & Clasp Authentication Setup
+# First-run until Hello World is public
 
-Clasp OAuth credentials belong in `.secrets/` (git-ignored). Do not commit `.clasprc.json`, `.clasp.json`, or tokens. The environment gate (`npm run doctor`) detects missing credentials and prints these steps; follow them with the human because login opens a browser.
+On a fresh clone (missing `.secrets/.clasprc.json`, missing or placeholder `.clasp.json`, or doctor not reporting **Public Hello World: visible**), finishing first-run **is** the current task. Do not wait for another human prompt. Walk the human through the steps below, pause only for browser clicks, then re-run `npm run doctor` until it prints `Public Hello World: visible`.
 
-### Initial Setup Steps:
-1. **Enable Apps Script API**: Visit [Google Apps Script Settings](https://script.google.com/home/usersettings) and turn on the API toggle.
-2. **Create the secrets directory and authenticate with Google**:
+Do not attach this repository to a random existing Apps Script project from `clasp list-scripts`. Only reuse a script ID if the human says that project is this nohost app.
+
+1. Latest Node and npm: `nvm install` and `nvm use` in the repo root (`.nvmrc` is the alias `node`). If npm is still behind, `npm install -g npm@latest`. Re-run `npm run doctor -- --ci` until develop checks pass. `npm run doctor -- --fix` may run `npm install` and copy an existing `~/.clasprc.json` into `.secrets/`.
+2. Ask the human to enable the Apps Script API: [script.google.com/home/usersettings](https://script.google.com/home/usersettings). Wait until they confirm the toggle is on.
+3. If credentials are still missing:
    ```bash
    mkdir -p .secrets
    npx clasp login --auth .secrets/.clasprc.json
    ```
-   If login wrote `~/.clasprc.json` instead:
+   The human must finish the Google browser login. If login wrote `~/.clasprc.json`, run `npm run doctor -- --fix`.
+4. If `.clasp.json` is missing, create a **new standalone** project (clasp 3 rejects `--type webapp`):
+   ```bash
+   npm run build
+   clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist
+   ```
+5. Publish the first public URL (allowed for a brand-new nohost script; this is not GitHub production):
+   ```bash
+   npm run deploy
+   ```
+6. Re-run `npm run doctor`. If the `/exec` URL is not anonymous, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run the doctor.
+
+Do not claim the site is public until the doctor says it is visible. Do not commit `.clasp.json` or `.secrets/`.
+
+---
+
+# Google Apps Script & Clasp Authentication Setup
+
+Clasp OAuth credentials belong in `.secrets/` (git-ignored). The first-run section above is the procedure; this is the same detail in one place.
+
+### Initial Setup Steps:
+1. **Enable Apps Script API**: [Google Apps Script Settings](https://script.google.com/home/usersettings).
+2. **Authenticate**:
    ```bash
    mkdir -p .secrets
-   mv ~/.clasprc.json .secrets/.clasprc.json
+   npx clasp login --auth .secrets/.clasprc.json
    ```
-   If credentials already exist at `~/.clasprc.json` or `./.clasprc.json`, copy them without logging in again:
+   If login wrote `~/.clasprc.json`: `npm run doctor -- --fix`.
+3. **Create a new project** (preferred):
    ```bash
-   npm run doctor -- --fix
+   npm run build
+   clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist
+   npm run deploy
    ```
-3. **Create or Connect Apps Script Project**:
-   If creating a new project:
-   ```bash
-   clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type webapp --rootDir dist
-   ```
-   If connecting an existing script, copy `.clasp.json.example` to `.clasp.json` and set the real script ID:
-     ```json
-     {"scriptId":"YOUR_SCRIPT_ID","rootDir":"dist"}
-     ```
-4. **Re-run the gate**:
-   ```bash
-   npm run doctor
-   ```
+   Connect an existing script only when the human identifies it as this nohost app: copy `.clasp.json.example` to `.clasp.json` and set that script ID with `"rootDir": "dist"`.
+4. **Re-run**: `npm run doctor`
 
 ---
 
@@ -73,7 +89,7 @@ At the start of every session, you must complete the following steps before begi
 4. Read `.config/ai/handoff.ai` if it exists.
 5. Run the environment gate. Prefer `npm run doctor`. If `node_modules` is missing, `node scripts/doctor.mjs` still works because the doctor uses only Node built-ins. If Node or npm is missing or not latest, install with `nvm install node` (the `.nvmrc` alias) and stop until `npm run doctor -- --ci` passes.
 6. If the doctor reports develop failures (Node, npm, git, `node_modules`), remediate and re-run before continuing. Safe automatic remediations: `npm install` or `npm run doctor -- --fix`. Git missing is a hard stop: tell the human to install Git from https://git-scm.com/ — do not treat a failed `git branch` spawn as a repo problem.
-7. If the doctor reports clasp or public Hello World failures, follow its printed remediations and the clasp setup section above with the human (browser login is required). Local build and test may continue only after develop checks pass. Do not claim the Hello World page is publicly available until the doctor reports it visible.
+7. If the doctor reports clasp or public Hello World failures, execute the **First-run until Hello World is public** section with the human. On a fresh clone that is not yet publicly visible, that first-run **is** the assigned task. Local build and test may continue only after develop checks pass. Do not claim the Hello World page is publicly available until the doctor reports it visible.
 8. Determine the current git branch (`git branch --show-current`, `git status --short`) after git has been confirmed present.
 9. Validate SpecKit (`specify --version` or `specify --help`). If it fails, ask the human for assistance. The doctor warns when SpecKit is missing; AI sessions still require it.
 10. Determine the technology stack.
