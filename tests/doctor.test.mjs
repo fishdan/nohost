@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import {
   clasprcLooksValid,
   clasprcRemediation,
+  claspJsonRemediation,
   classifyPublicResponse,
   createIo,
   extractJsonValue,
@@ -136,6 +137,27 @@ test('clasprc remediation tells the user how to login and store credentials', ()
   assert.match(text, /clasp login --auth \.secrets\/\.clasprc\.json/);
   assert.match(text, /npm run doctor -- --fix/);
   assert.match(text, /script\.google\.com\/home\/usersettings/);
+});
+
+test('clasp project remediation creates a new standalone script, not type webapp', () => {
+  const text = claspJsonRemediation();
+  assert.match(text, /--type standalone/);
+  assert.doesNotMatch(text, /--type webapp/);
+  assert.match(text, /npm run deploy/);
+  assert.match(text, /do not attach a random existing script/i);
+});
+
+test('README and start.ai tell an AI to finish first-run through public Hello World', async () => {
+  const readme = await readFile('README.md', 'utf8');
+  const start = await readFile('start.ai', 'utf8');
+  assert.match(readme, /Public Hello World: visible/);
+  assert.match(readme, /Read `start\.ai`/);
+  assert.match(readme, /--type standalone/);
+  assert.doesNotMatch(readme, /clasp create[^\n]*--type webapp/);
+  assert.match(start, /First-run until Hello World is public/);
+  assert.match(start, /--type standalone/);
+  assert.doesNotMatch(start, /clasp create[^\n]*--type webapp/);
+  assert.match(start, /the current task/);
 });
 
 test('fresh clone without clasp credentials fails deploy checks with remediations', async () => {

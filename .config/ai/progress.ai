@@ -1,5 +1,12 @@
 # Progress Log
 
+## 2026-08-27 — Fresh-install Hello World onboarding
+
+- README now leads with an AI prompt and success check (`Public Hello World: visible`).
+- `start.ai` requires finishing first-run on a fresh clone (nvm, Apps Script API, clasp login, **standalone** create, `npm run deploy`) before other feature work.
+- Doctor remediations no longer use invalid `--type webapp`. First-time local deploy of a new nohost script is allowed; GitHub production stays separate.
+- Validation: `npm test`.
+
 ## 2026-08-27 — Track latest Node and npm
 
 - Replaced the pinned Node 20 engine with `.nvmrc` containing `node` (nvm's latest alias) and GitHub Actions `node-version: latest`.

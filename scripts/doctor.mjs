@@ -139,10 +139,12 @@ export function clasprcRemediation({ homeExists = false, rootExists = false } = 
 
 export function claspJsonRemediation() {
   return [
-    'Copy the example and set the real script ID:',
-    'cp .clasp.json.example .clasp.json',
-    'Or create a project after clasp login:',
-    'clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type webapp --rootDir dist',
+    'Create a NEW Apps Script project for this repo (do not attach a random existing script):',
+    'npm run build',
+    'clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist',
+    'Then publish the first public URL: npm run deploy',
+    'Re-run: npm run doctor',
+    'Only copy .clasp.json.example if the human already named this repo\'s existing script ID.',
   ].join('\n');
 }
 
