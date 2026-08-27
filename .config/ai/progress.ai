@@ -1,5 +1,20 @@
 # Progress Log
 
+## 2026-08-27 — Track latest Node and npm
+
+- Replaced the pinned Node 20 engine with `.nvmrc` containing `node` (nvm's latest alias) and GitHub Actions `node-version: latest`.
+- `npm run doctor` now includes `npm doctor versions`, so the gate follows npm's current latest Node/npm instead of a major number.
+- Validation: `npm test` after the change.
+
+## 2026-08-27 — Startup environment gate
+
+- Added `npm run doctor` (`scripts/doctor.mjs`) as the session and fresh-clone environment gate.
+- The doctor runs `npm doctor connection registry environment`, then checks Node.js 20+, git, `node_modules`, clasp credentials in `.secrets/`, `.clasp.json`, and anonymous Hello World visibility.
+- `--fix` copies existing clasp credentials and runs `npm install`; `--ci` is toolchain-only for GitHub Actions.
+- `package.json` now declares `engines.node >= 20`. `start.ai` runs the doctor at session start.
+- Validation: `npm run build`, `npm test` (18 passing), and `npm run doctor -- --ci` passed. Full `npm run doctor` correctly fails on this checkout: develop ready, deploy not ready (missing `.secrets/.clasprc.json` and `.clasp.json`).
+
+
 ## 2026-08-16 — Public web app verified
 
 - GitHub production workflow succeeded after the clasp OAuth fallback was merged.
