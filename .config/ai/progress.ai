@@ -6,6 +6,11 @@
 - `npm run doctor` now includes `npm doctor versions`, so the gate follows npm's current latest Node/npm instead of a major number.
 - Validation: `npm test` after the change.
 
+## 2026-08-27 — CI latest-npm gate
+
+- GitHub Actions `setup-node` with `node-version: latest` installed Node 26.8.1 but bundled npm 11.19.0; `npm doctor versions` requires npm 12.0.2.
+- CI and deploy now run `npm install -g npm@latest` after setup-node, and use `actions/checkout@v7` plus `actions/setup-node@v7`.
+
 ## 2026-08-27 — Startup environment gate
 
 - Added `npm run doctor` (`scripts/doctor.mjs`) as the session and fresh-clone environment gate.

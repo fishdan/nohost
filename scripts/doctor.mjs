@@ -12,6 +12,7 @@ const LATEST_TOOLCHAIN_FIX = [
   'This project tracks latest Node.js and npm (see .nvmrc), not a pinned major.',
   'nvm install node',
   'nvm install-latest-npm',
+  'In GitHub Actions: npm install -g npm@latest after setup-node.',
   'Then re-run: npm run doctor',
 ].join('\n');
 

@@ -11,7 +11,7 @@ This feature covers local environment gating and guided remediations. It does no
 ## Acceptance criteria
 
 - `.nvmrc` contains a latest alias (`node`, `latest`, or `current`), not a pinned major version.
-- CI and production workflows install Node with `node-version: latest`.
+- CI and production workflows install Node with `node-version: latest` and then `npm install -g npm@latest` (setup-node’s bundled npm can lag npm’s current latest).
 - `npm run doctor` (and `node scripts/doctor.mjs`) runs without installed project dependencies other than Node and npm.
 - The doctor runs `npm doctor connection registry environment versions` so Node and npm must match npm’s current latest, plus registry, git, and PATH health.
 - The doctor verifies git, `.nvmrc`, and `node_modules`.

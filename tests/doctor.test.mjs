@@ -213,6 +213,13 @@ test('missing git is reported with an install hint instead of a cryptic spawn er
   assert.match(git.fix, /git-scm\.com/);
 });
 
+test('CI installs latest Node and latest npm before the doctor gate', async () => {
+  const ci = await readFile('.github/workflows/ci.yml', 'utf8');
+  assert.match(ci, /node-version:\s*latest/);
+  assert.match(ci, /npm install -g npm@latest/);
+  assert.match(ci, /actions\/setup-node@v7/);
+});
+
 test('package.json has a doctor script and .nvmrc tracks latest, not a major number', async () => {
   const pkg = JSON.parse(await readFile('package.json', 'utf8'));
   const nvmrc = (await readFile('.nvmrc', 'utf8')).trim();
