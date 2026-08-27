@@ -8,22 +8,27 @@ Source lives in `src/`. `npm run build` compiles TypeScript and copies the HTML 
 
 ## Local development
 
-Requirements: Node.js 20+, npm, and a Google account with access to the Apps Script project.
+Requirements: latest Node.js and npm (see `.nvmrc`), and a Google account with access to the Apps Script project.
 
 ```bash
 npm install
+npm run doctor
 npm run build
 npm test
 ```
 
+`npm run doctor` is the environment gate. It wraps `npm doctor connection registry environment versions` so Node and npm track **latest** (not a pinned major), then checks git, `.nvmrc`, `node_modules`, clasp credentials in `.secrets/`, `.clasp.json`, and whether the public Hello World `/exec` URL is reachable without sign-in. Use `nvm install node` to match `.nvmrc`. Use `npm run doctor -- --fix` to install dependencies and copy existing clasp credentials into `.secrets/`. Use `npm run doctor -- --ci` for toolchain-only checks. The doctor never prints secrets and never commits them.
+
 To connect a local checkout after the Google project exists:
 
 ```bash
-npx clasp login
-npx clasp create --title "nohost Web App" --type webapp
+mkdir -p .secrets
+npx clasp login --auth .secrets/.clasprc.json
+# or: npm run doctor -- --fix  (copies ~/.clasprc.json into .secrets/)
+clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type webapp --rootDir dist
 # or copy .clasp.json.example to .clasp.json and fill in the script ID
+npm run doctor
 npm run push
-npx clasp deployments
 ```
 
 Keep `.clasp.json` local. Review the web app's deployment access and execution settings in Apps Script before sharing its URL.

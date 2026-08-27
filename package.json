@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test",
+    "doctor": "node scripts/doctor.mjs",
     "push": "npm run build && node scripts/push.mjs",
     "deploy": "npm run push && node scripts/deploy.mjs",
     "bootstrap:google": "bash scripts/bootstrap-google.sh"

@@ -29,30 +29,37 @@ It is never ok to have a .claude, .codex, .gemini or any other vendor specific f
 
 # Google Apps Script & Clasp Authentication Setup
 
-To store authentication credentials locally within the project, we use a `.secrets/` directory (which is git-ignored).
+Clasp OAuth credentials belong in `.secrets/` (git-ignored). Do not commit `.clasprc.json`, `.clasp.json`, or tokens. The environment gate (`npm run doctor`) detects missing credentials and prints these steps; follow them with the human because login opens a browser.
 
 ### Initial Setup Steps:
 1. **Enable Apps Script API**: Visit [Google Apps Script Settings](https://script.google.com/home/usersettings) and turn on the API toggle.
-2. **Authenticate with Google**:
+2. **Create the secrets directory and authenticate with Google**:
    ```bash
-   npx clasp login
+   mkdir -p .secrets
+   npx clasp login --auth .secrets/.clasprc.json
    ```
-3. **Move Credentials to `.secrets/`**:
-   Create the directory and copy the generated credentials file:
+   If login wrote `~/.clasprc.json` instead:
    ```bash
    mkdir -p .secrets
    mv ~/.clasprc.json .secrets/.clasprc.json
    ```
-4. **Create or Connect Apps Script Project**:
+   If credentials already exist at `~/.clasprc.json` or `./.clasprc.json`, copy them without logging in again:
+   ```bash
+   npm run doctor -- --fix
+   ```
+3. **Create or Connect Apps Script Project**:
    If creating a new project:
    ```bash
    clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type webapp --rootDir dist
    ```
-   If connecting an existing script:
-   - Create a `.clasp.json` file in the root containing:
+   If connecting an existing script, copy `.clasp.json.example` to `.clasp.json` and set the real script ID:
      ```json
      {"scriptId":"YOUR_SCRIPT_ID","rootDir":"dist"}
      ```
+4. **Re-run the gate**:
+   ```bash
+   npm run doctor
+   ```
 
 ---
 
@@ -64,13 +71,15 @@ At the start of every session, you must complete the following steps before begi
 2. Read `.config/ai/repo.ai` if it exists.
 3. Read `.config/ai/progress.ai` if it exists.
 4. Read `.config/ai/handoff.ai` if it exists.
-5. Determine the current git branch (`git branch --show-current`, `git status --short`).
-6. Validate SpecKit (`specify --version` or `specify --help`). If it fails, ask the human for assistance.
-7. Determine the technology stack.
-8. Verify constitution availability (read and honor `.specify/memory/constitution.md`).
-9. Review active specifications (e.g., `spec.md`, `plan.md`, `tasks.md`).
-10. **Validate Google Apps Script Deployment & Internet Visibility** (see diagnostics below).
-11. Recommend next work.
+5. Run the environment gate. Prefer `npm run doctor`. If `node_modules` is missing, `node scripts/doctor.mjs` still works because the doctor uses only Node built-ins. If Node or npm is missing or not latest, install with `nvm install node` (the `.nvmrc` alias) and stop until `npm run doctor -- --ci` passes.
+6. If the doctor reports develop failures (Node, npm, git, `node_modules`), remediate and re-run before continuing. Safe automatic remediations: `npm install` or `npm run doctor -- --fix`. Git missing is a hard stop: tell the human to install Git from https://git-scm.com/ — do not treat a failed `git branch` spawn as a repo problem.
+7. If the doctor reports clasp or public Hello World failures, follow its printed remediations and the clasp setup section above with the human (browser login is required). Local build and test may continue only after develop checks pass. Do not claim the Hello World page is publicly available until the doctor reports it visible.
+8. Determine the current git branch (`git branch --show-current`, `git status --short`) after git has been confirmed present.
+9. Validate SpecKit (`specify --version` or `specify --help`). If it fails, ask the human for assistance. The doctor warns when SpecKit is missing; AI sessions still require it.
+10. Determine the technology stack.
+11. Verify constitution availability (read and honor `.specify/memory/constitution.md`).
+12. Review active specifications (e.g., `spec.md`, `plan.md`, `tasks.md`).
+13. Recommend next work.
 
 MONTHLY SECURITY AUDIT
 
@@ -85,40 +94,27 @@ Do not begin feature implementation until this sequence completes and you output
 
 # Deployment & Internet Visibility Diagnostics
 
-If the Hello World page is not visible on the internet, perform the following validation checks:
+Do not diagnose clasp or public visibility by hand first. Run `npm run doctor` and follow its FAIL remediations. The doctor:
 
-### Step 1: Validate Clasp Credentials
-Ensure `.secrets/.clasprc.json` exists and is valid:
+- Runs `npm doctor connection registry environment versions` (git, registry, PATH, and **latest** Node/npm). `.nvmrc` contains `node` so the version is not pinned to a major number.
+- Checks that Node and npm run, git is present, `.nvmrc` is a latest alias, and `node_modules` is installed.
+- Checks clasp credentials at `.secrets/.clasprc.json`, `.clasp.json` (not the example placeholder), `clasp status`, and anonymous Hello World at the versioned `/exec` URL.
+
+If you need to re-check a known URL without waiting for clasp to list deployments:
+
+```bash
+CLASP_WEB_APP_URL="https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec" npm run doctor
+```
+
+Manual fallback if the doctor cannot run:
+
 ```bash
 clasp_config_auth=.secrets/.clasprc.json npx clasp status
-```
-If it prints an authentication error or fails to login, run `npx clasp login` again and move the generated file to `.secrets/.clasprc.json`.
-
-### Step 2: Validate Script ID Association
-Check that `.clasp.json` exists at the root and has the correct `scriptId` configured.
-
-### Step 3: Local Build and Push
-Build and push the latest Hello World static assets:
-```bash
 npm run build && npm run push
-```
-Ensure there are no errors during build or push.
-
-### Step 4: Validate Public Web App Deployment
-Deploy the web app (this creates/updates a versioned deployment):
-```bash
 npm run deploy
 ```
-This command output will show your web app URL (e.g. `https://script.google.com/macros/s/.../exec`).
 
-### Step 5: Test Web App URL Public Visibility (No Sign-In Required)
-Query the deployment URL using `curl` to see if it allows anonymous public access without redirecting to Google Sign-in:
-```bash
-curl -L -I -o /dev/null -w "%{http_code}" "<YOUR_WEB_APP_URL>"
-```
-- **If the output is `200`**: The Hello World page is successfully visible to the public on the internet.
-- **If the output is `401`, `403` or redirects to Google Accounts login**: The web app is not publicly configured. 
-  - **Remediation**: Open the Google Apps Script project (`npx clasp open`), click **Deploy** -> **Manage deployments**, select your Web App deployment, click the edit (pencil) icon, and change **Who has access** from "Only myself" or "Anyone within organization" to **"Anyone"**. Click **Deploy** to save changes, then re-run the `curl` test.
+If the `/exec` URL returns `401`, `403`, or redirects to Google sign-in, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run `npm run doctor`.
 
 ---
 
@@ -179,6 +175,10 @@ Progress:
 
 Handoff:
 <summary or none>
+
+Doctor:
+<develop ready/not ready; deploy ready/not ready; public Hello World: visible/not visible/unchecked>
+<summary of failures and remediations, or passed>
 
 Recommended Next Task:
 <task identifier and description>
