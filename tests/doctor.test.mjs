@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import {
   clasprcLooksValid,
   clasprcRemediation,
+  claspAccountEmail,
   claspJsonRemediation,
   classifyAnonymousPage,
   classifyPublicResponse,
@@ -14,6 +15,7 @@ import {
   isLatestAlias,
   isPlaceholderScriptId,
   looksLikeSheetsAuthorizationFailure,
+  ownerSignInLine,
   parseArgs,
   parseNpmDoctorOutput,
   PUBLIC_HOME_MARKERS,
@@ -102,6 +104,14 @@ test('placeholder script IDs are rejected', () => {
   assert.equal(isPlaceholderScriptId('1abcRealScriptId'), false);
 });
 
+test('claspAccountEmail reads the login email from the id_token', () => {
+  const payload = Buffer.from(JSON.stringify({ email: 'owner@example.com' })).toString('base64url');
+  assert.equal(claspAccountEmail({ tokens: { default: { id_token: `e30.${payload}.sig` } } }), 'owner@example.com');
+  assert.equal(claspAccountEmail({}), '');
+  assert.match(ownerSignInLine('owner@example.com'), /owner@example.com/);
+  assert.match(ownerSignInLine('owner@example.com'), /You need access/);
+});
+
 test('clasprcLooksValid accepts current and legacy credential shapes', () => {
   assert.equal(clasprcLooksValid({ tokens: { default: { refresh_token: 'x' } } }), true);
   assert.equal(clasprcLooksValid({ token: { refresh_token: 'x' } }), true);
@@ -151,9 +161,13 @@ test('Sheets authorization failures tell the owner to open ?page=view, not the e
   );
   assert.equal(verdict.ok, false);
   assert.equal(verdict.kind, 'sheets-auth');
-  const fix = sheetsAuthorizationRemediation('https://script.google.com/macros/s/pub-id/exec?page=view');
+  const fix = sheetsAuthorizationRemediation(
+    'https://script.google.com/macros/s/pub-id/exec?page=view',
+    'owner@example.com',
+  );
   assert.match(fix, /\?page=view/);
-  assert.match(fix, /signed in as the site owner/);
+  assert.match(fix, /Sign in as owner@example.com/);
+  assert.match(fix, /You need access/);
   assert.match(fix, /Do not use the Apps Script editor/);
   assert.doesNotMatch(fix, /getGuestbookEntries/);
   assert.match(publicSiteRemediation('https://script.google.com/macros/s/pub-id/exec'), /Do not create a second Apps Script project/);
@@ -188,6 +202,8 @@ test('README and start.ai treat first-run as creating the master app', async () 
   assert.match(start, /the current task/);
   assert.match(start, /never create another nohost script/i);
   assert.match(start, /do not pick a function from the Run dropdown/i);
+  assert.match(start, /You need access/);
+  assert.match(start, /0\.008-master-app-operability\/notes\.md/);
 });
 
 test('doctor fetches home, sign, and view on the printed /exec URL', async () => {
