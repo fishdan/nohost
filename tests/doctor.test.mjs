@@ -256,6 +256,17 @@ test('start.ai gates sessions on npm run doctor', async () => {
   assert.match(start, /Doctor:/);
 });
 
+test('start.ai requires permission before consequential startup remediation', async () => {
+  const start = await readFile('start.ai', 'utf8');
+  assert.match(start, /Permission Gates for Startup Remediation/);
+  assert.match(start, /ask for and receive explicit human permission/i);
+  assert.match(start, /Installs, upgrades, or changes machine-level or user-level tooling/);
+  assert.match(start, /Starts or repeats authentication/);
+  assert.match(start, /Creates or attaches an Apps Script project/);
+  assert.match(start, /publishes\/deploys a web app/);
+  assert.match(start, /Safe local remediation such as `npm install`/);
+});
+
 test('doctor --ci is ready on latest Node/npm, or tells you to nvm install node', () => {
   const ran = spawnSync(process.execPath, ['scripts/doctor.mjs', '--ci'], { encoding: 'utf8' });
   if (ran.status === 0) {

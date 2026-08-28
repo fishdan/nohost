@@ -27,26 +27,41 @@ It is never ok to have a .claude, .codex, .gemini or any other vendor specific f
 
 ---
 
+# Permission Gates for Startup Remediation
+
+The human controls actions that alter their computer, account, or internet-visible systems. The AI may run read-only diagnostics, inspect the repository, run the doctor, and perform safe repository-local checks without asking again.
+
+Before solving a problem, the AI must ask for and receive explicit human permission before it:
+
+1. Installs, upgrades, or changes machine-level or user-level tooling (including nvm, Node.js, npm, uv, global npm packages, and SpecKit).
+2. Starts or repeats authentication, writes credentials, or asks the human to approve access in a browser.
+3. Creates or attaches an Apps Script project, changes Google Cloud or GitHub configuration, or publishes/deploys a web app.
+4. Performs any other action with a material external effect not already explicitly authorized by the human.
+
+The AI should state the specific action, why it is needed, and its scope. A browser click is always performed by the human; it does not by itself authorize the AI's related command. Once permission is granted for a stated action, the AI may complete that action and its directly necessary verification. Safe local remediation such as `npm install` or `npm run doctor -- --fix` may proceed when it changes only this checkout and does not authenticate or publish.
+
+---
+
 # First-run until Hello World is public
 
 On a fresh clone (missing `.secrets/.clasprc.json`, missing or placeholder `.clasp.json`, or doctor not reporting **Public Hello World: visible**), finishing first-run **is** the current task. Do not wait for another human prompt. Walk the human through the steps below, pause only for browser clicks, then re-run `npm run doctor` until it prints `Public Hello World: visible`.
 
 Do not attach this repository to a random existing Apps Script project from `clasp list-scripts`. Only reuse a script ID if the human says that project is this nohost app.
 
-1. Latest Node and npm: `nvm install` and `nvm use` in the repo root (`.nvmrc` is the alias `node`). If npm is still behind, `npm install -g npm@latest`. Re-run `npm run doctor -- --ci` until develop checks pass. `npm run doctor -- --fix` may run `npm install` and copy an existing `~/.clasprc.json` into `.secrets/`.
-2. Ask the human to enable the Apps Script API: [script.google.com/home/usersettings](https://script.google.com/home/usersettings). Wait until they confirm the toggle is on.
+1. Ask permission before installing or updating Node/npm, then run `nvm install` and `nvm use` in the repo root (`.nvmrc` is the alias `node`). If npm is still behind, separately ask permission before `npm install -g npm@latest`. Re-run `npm run doctor -- --ci` until develop checks pass. `npm run doctor -- --fix` may run `npm install` and copy an existing `~/.clasprc.json` into `.secrets/`.
+2. Ask the human to enable the Apps Script API: [script.google.com/home/usersettings](https://script.google.com/home/usersettings). Wait until they confirm the toggle is on. Ask permission before starting the subsequent clasp authentication command.
 3. If credentials are still missing:
    ```bash
    mkdir -p .secrets
    npx clasp login --auth .secrets/.clasprc.json
    ```
    The human must finish the Google browser login. If login wrote `~/.clasprc.json`, run `npm run doctor -- --fix`.
-4. If `.clasp.json` is missing, create a **new standalone** project (clasp 3 rejects `--type webapp`):
+4. If `.clasp.json` is missing, ask permission before creating a **new standalone** project (clasp 3 rejects `--type webapp`):
    ```bash
    npm run build
    clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist
    ```
-5. Publish the first public URL (allowed for a brand-new nohost script; this is not GitHub production):
+5. Ask permission before publishing the first public URL (allowed for a brand-new nohost script; this is not GitHub production):
    ```bash
    npm run deploy
    ```
