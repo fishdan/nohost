@@ -1,5 +1,19 @@
 # Progress Log
 
+## 2026-08-27 — Startup permission gates
+
+- Added SpecKit entry `0.006-startup-permission-gates`.
+- `start.ai` now requires explicit human permission before tool installation or upgrades, authentication, Apps Script project creation, deployment, or other material external changes. It still permits read-only diagnostics and safe checkout-local remediation without a separate confirmation.
+- Added an automated assertion for the permission policy.
+- Validation: `npm test` (22 passing) and `git diff --check`.
+
+## 2026-08-27 — Fresh-clone public Hello World onboarding completed
+
+- Installed the latest Node.js and npm, restored project dependencies, and installed SpecKit (`specify 1.0.2.dev0`).
+- Enabled the Apps Script API for the authenticated project owner, authenticated clasp with credentials stored only in ignored `.secrets/.clasprc.json`, and created a new standalone Apps Script project.
+- Published the first deployment locally as permitted for a new nohost project. The deployment ID remains untracked in the ignored `.clasp.json`.
+- Validation: `npm run doctor` passed with `Develop: ready`, `Deploy: ready`, and `Public Hello World: visible` (HTTP 200).
+
 ## 2026-08-27 — Fresh-install Hello World onboarding
 
 - README now leads with an AI prompt and success check (`Public Hello World: visible`).
