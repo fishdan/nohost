@@ -48,13 +48,13 @@ https://script.google.com/macros/s/AKfycbxXJwRMIr1CxEgSZcl3X45W4Nkd7NH6Xl__R6rjK
 - Sign: add `?page=sign`
 - View: add `?page=view`
 
-If `npm run doctor` reports 403 or missing Sheets access, open that view URL while signed in as the owner and approve Google. Then set **Who has access** to **Anyone** if visitors still cannot load it.
+If `npm run doctor` reports 403 or missing Sheets access, open that view URL while signed in as the owner and approve Google. Then set **Who has access** to **Anyone** if visitors still cannot load it. Pitfalls (wrong Gmail, Share vs Deploy, iframe links) are in `specs/0/0.008-master-app-operability/notes.md`.
 
 ## After the public site is visible
 
 Source lives in `src/`. `npm run build` writes Apps Script files into `dist/` (the clasp root). Change the site through GitHub: an assistant edits `src/`, you review a pull request, and GitHub Actions deploys **the same** master `/exec` URL.
 
-If the doctor says the guestbook view page needs Sheets access, open the printed `/exec?page=view` link while signed in as the site owner and approve Google. Do not use the Apps Script editor Run dropdown.
+If the doctor says the guestbook view page needs Sheets access, sign in as the Google account that ran clasp login for this checkout (doctor prints that email). Open the printed `/exec?page=view` link and approve Google. A different Gmail will see "You need access". Do not use the Apps Script editor Run dropdown.
 
 ```bash
 npm run doctor -- --ci

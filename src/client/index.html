@@ -8,8 +8,8 @@
     <main class="site-shell">
       <p class="eyebrow">Community guestbook</p>
       <nav aria-label="Guestbook">
-        <a href="?page=sign">Sign the guestbook</a>
-        <a href="?page=view">See the guestbook</a>
+        <a href="<?= webAppUrl ?>?page=sign" target="_top">Sign the guestbook</a>
+        <a href="<?= webAppUrl ?>?page=view" target="_top">See the guestbook</a>
       </nav>
       <? if (page === 'sign') { ?>
         <h1>Sign the guestbook</h1>
@@ -35,10 +35,11 @@
         <p class="intro">Leave a hello, then see who has visited from around the world.</p>
         <section class="card" aria-labelledby="next-heading">
           <h2 id="next-heading">Join the guestbook</h2>
-          <p><a href="?page=sign">Sign the guestbook</a> or <a href="?page=view">see the guestbook</a>.</p>
+          <p><a href="<?= webAppUrl ?>?page=sign" target="_top">Sign the guestbook</a> or <a href="<?= webAppUrl ?>?page=view" target="_top">see the guestbook</a>.</p>
         </section>
       <? } ?>
     </main>
+    <script>window.NOHOST_WEB_APP_URL = <?!= JSON.stringify(webAppUrl || '') ?>;</script>
     <?!= include('scripts'); ?>
   </body>
 </html>

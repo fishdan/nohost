@@ -7,10 +7,16 @@ test('build output contains the Apps Script entry point and page partials', asyn
   const page = await readFile('dist/index.html', 'utf8');
   const guestbookLogic = await readFile('dist/guestbook-logic.js', 'utf8');
   assert.match(code, /function doGet\(event\)/);
+  assert.match(code, /ScriptApp\.getService\(\)\.getUrl\(\)/);
   assert.match(code, /function createGuestbookSpreadsheet\(\)/);
   assert.match(page, /Sign the guestbook/);
   assert.match(page, /See the guestbook/);
-  assert.match(page, /guestbook-form/);
+  assert.match(page, /webAppUrl \?>\?page=sign/);
+  assert.match(page, /target="_top"/);
+  assert.match(page, /NOHOST_WEB_APP_URL/);
+  const guestbookScripts = await readFile('dist/scripts.html', 'utf8');
+  assert.match(guestbookScripts, /page=view/);
+  assert.match(guestbookScripts, /window\.top\.location\.href/);
   assert.match(page, /guestbook-entries/);
   assert.match(guestbookLogic, /function validateGuestbookEntry/);
   assert.doesNotMatch(guestbookLogic, /export /);

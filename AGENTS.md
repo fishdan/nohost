@@ -13,3 +13,4 @@ Read and follow `start.ai` before doing any work.
 - Do not modify Google Cloud or deployment configuration unless the requested task requires it.
 - Preserve existing visual and content conventions unless explicitly asked to change them.
 - Keep the site simple and maintainable for a nontechnical maintainer and future AI assistants.
+- Before clasp create, deploy, Sheets auth, or naming a public URL, read `specs/0/0.008-master-app-operability/notes.md` (wrong Google account, Share vs web-app access, iframe links, second-script split).

@@ -1,12 +1,17 @@
 # Progress Log
 
+## 2026-08-28 — Operability notes for future assistants
+
+- Recorded the Hello World / guestbook operational failures in `specs/0/0.008-master-app-operability/notes.md` (one master app, clasp login vs daily Gmail, Share vs web-app Anyone, Sheets 403, HtmlService iframe links, doctor, GitHub WIF).
+- Guestbook-specific notes in `specs/0/0.007-visitor-guestbook/notes.md` point at that file. `start.ai` and `AGENTS.md` require reading it before clasp/deploy/auth.
+
 ## 2026-08-28 — Master app operability
 
 - Added SpecKit `0.008-master-app-operability`: first-run creates one master Apps Script website; later features deploy into that same `/exec` URL.
 - `npm run doctor` now prints the public URL and anonymously checks current home, `?page=sign`, and `?page=view`. Success is **Public site: visible**. Sheets/403 remediations send the owner to that URL, not the Apps Script editor Run dropdown.
 - Deployed current `src/` onto this checkout's existing Hello World script (versioned deployment, version 3). Do not create a second nohost project.
 - GitHub `production` now deploys with `CLASPRC_JSON` / `CLASP_PROJECT_JSON` / `CLASP_DEPLOYMENT_ID`. Cloud WIF is optional and no longer blocks clasp deploys.
-- Remaining human click: open the master `/exec?page=view` URL signed in as the owner, approve Google access, and set **Who has access** to **Anyone** if doctor still reports 403.
+- Remaining human click: sign in as `dan@people4liberty.org` (not `fishdan@gmail.com`), open the master `/exec?page=view` URL, approve Google access, and set **Who has access** to **Anyone** if doctor still reports 403.
 
 ## 2026-08-28 — Project mission added to constitution
 

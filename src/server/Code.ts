@@ -8,10 +8,12 @@ function doGet(event: GoogleAppsScript.Events.DoGet): GoogleAppsScript.HTML.Html
   if (page === 'view') getGuestbookSheet();
   const template = HtmlService.createTemplateFromFile('index');
   template.page = page;
+  template.webAppUrl = ScriptApp.getService().getUrl();
   return template
     .evaluate()
     .setTitle(page === 'sign' ? 'Sign the guestbook' : page === 'view' ? 'See the guestbook' : 'nohost Web App')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename: string): string {

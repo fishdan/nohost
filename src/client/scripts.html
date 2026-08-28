@@ -10,7 +10,14 @@
       google.script.run
         .withSuccessHandler((result) => {
           status.textContent = result.message;
-          if (result.ok) form.reset();
+          if (result.ok) {
+            const base = window.NOHOST_WEB_APP_URL;
+            if (base) {
+              window.top.location.href = `${base}?page=view`;
+              return;
+            }
+            form.reset();
+          }
           button.disabled = false;
         })
         .withFailureHandler(() => {

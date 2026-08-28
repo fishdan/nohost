@@ -55,6 +55,26 @@ export function isLatestAlias(spec) {
   return LATEST_NODE_ALIASES.includes(String(spec || '').trim().toLowerCase());
 }
 
+export function claspAccountEmail(parsed) {
+  try {
+    const id = parsed?.tokens?.default?.id_token || parsed?.token?.id_token;
+    if (!id || typeof id !== 'string') return '';
+    const parts = id.split('.');
+    if (parts.length < 2) return '';
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return typeof payload.email === 'string' ? payload.email : '';
+  } catch {
+    return '';
+  }
+}
+
+export function ownerSignInLine(email) {
+  if (email) {
+    return `Sign in as ${email} (the Google account that ran clasp login for this checkout). A different Gmail will see "You need access".`;
+  }
+  return 'Sign in as the Google account that ran clasp login for this checkout, not a different Gmail.';
+}
+
 export function clasprcLooksValid(parsed) {
   if (!parsed || typeof parsed !== 'object') return false;
   if (parsed.tokens && typeof parsed.tokens === 'object' && Object.keys(parsed.tokens).length > 0) return true;
@@ -173,23 +193,24 @@ export function claspJsonRemediation() {
   ].join('\n');
 }
 
-export function publicSiteRemediation(url) {
+export function publicSiteRemediation(url, ownerEmail) {
   const execUrl = url || 'the public /exec URL doctor printed';
   return [
-    `Open this URL while signed in as the site owner and approve Google access if asked:`,
+    ownerSignInLine(ownerEmail),
+    `Open this URL and approve Google access if asked:`,
     execUrl,
-    'If signed-out visitors still get 403: npx clasp open → Deploy → Manage deployments → edit the web app.',
+    'If signed-out visitors still get 403: while still in that same Google account, open Deploy → Manage deployments → edit the web app.',
     'Set Execute as: Me, Who has access: Anyone, then Deploy.',
     'Do not create a second Apps Script project. Do not pick a function from the Run dropdown.',
     'Re-run: npm run doctor',
   ].join('\n');
 }
 
-export function sheetsAuthorizationRemediation(viewUrl) {
+export function sheetsAuthorizationRemediation(viewUrl, ownerEmail) {
   return [
-    'Open this guestbook page while signed in as the site owner:',
+    ownerSignInLine(ownerEmail),
+    'Open this guestbook page and approve Google Sheets access if Google asks:',
     viewUrl || 'the public /exec URL with ?page=view',
-    'Approve Google Sheets access if Google asks, then wait for the page to load.',
     'Do not use the Apps Script editor, and do not pick a function from the Run dropdown.',
     'Re-run: npm run doctor',
   ].join('\n');
@@ -397,7 +418,9 @@ function checkClasprc(io) {
   if (!clasprcLooksValid(project.value)) {
     return result('fail', 'clasprc', 'deploy', '.secrets/.clasprc.json does not look like clasp OAuth credentials.', fix);
   }
-  return result('pass', 'clasprc', 'deploy', 'Clasp credentials are present in .secrets/.clasprc.json');
+  const email = claspAccountEmail(project.value);
+  const who = email ? ` for ${email}` : '';
+  return result('pass', 'clasprc', 'deploy', `Clasp credentials are present in .secrets/.clasprc.json${who}`);
 }
 
 function checkClaspJson(io) {
@@ -495,13 +518,20 @@ function resolvePublicExecUrl(io, previous) {
   return { ok: true, url: webAppExecUrl(ids[0]) };
 }
 
-function viewPageFix(viewUrl, verdict) {
-  if (verdict.kind === 'sign-in' || verdict.kind === 'forbidden') return publicSiteRemediation(viewUrl);
-  if (verdict.kind === 'sheets-auth' || verdict.kind === 'content') return sheetsAuthorizationRemediation(viewUrl);
-  return publicSiteRemediation(viewUrl);
+function ownerEmailFromIo(io) {
+  const project = readJsonIfPresent(io, join(io.root, '.secrets', '.clasprc.json'));
+  if (!project.exists || project.error) return '';
+  return claspAccountEmail(project.value);
+}
+
+function viewPageFix(viewUrl, verdict, ownerEmail) {
+  if (verdict.kind === 'sign-in' || verdict.kind === 'forbidden') return publicSiteRemediation(viewUrl, ownerEmail);
+  if (verdict.kind === 'sheets-auth' || verdict.kind === 'content') return sheetsAuthorizationRemediation(viewUrl, ownerEmail);
+  return publicSiteRemediation(viewUrl, ownerEmail);
 }
 
 async function checkPublicPages(io, previous) {
+  const ownerEmail = ownerEmailFromIo(io);
   const resolved = resolvePublicExecUrl(io, previous);
   if (resolved.skip) {
     return [
@@ -512,7 +542,7 @@ async function checkPublicPages(io, previous) {
   }
   if (!resolved.ok) {
     return [
-      result('fail', 'public-home', 'public', resolved.message, publicSiteRemediation()),
+      result('fail', 'public-home', 'public', resolved.message, publicSiteRemediation(undefined, ownerEmail)),
       result('skip', 'public-sign', 'public', 'Skipped because the public URL could not be resolved.'),
       result('skip', 'public-view', 'public', 'Skipped because the public URL could not be resolved.'),
     ];
@@ -531,12 +561,12 @@ async function checkPublicPages(io, previous) {
     try {
       fetched = await fetchPublicPage(io, pageUrl);
     } catch (error) {
-      results.push(result('fail', page.id, 'public', `Could not fetch ${pageUrl} (${error.message}).`, publicSiteRemediation(pageUrl)));
+      results.push(result('fail', page.id, 'public', `Could not fetch ${pageUrl} (${error.message}).`, publicSiteRemediation(pageUrl, ownerEmail)));
       continue;
     }
     const verdict = classifyAnonymousPage(fetched, page.markers);
     if (!verdict.ok) {
-      const fix = page.id === 'public-view' ? viewPageFix(pageUrl, verdict) : publicSiteRemediation(pageUrl);
+      const fix = page.id === 'public-view' ? viewPageFix(pageUrl, verdict, ownerEmail) : publicSiteRemediation(pageUrl, ownerEmail);
       results.push(result('fail', page.id, 'public', `${pageUrl} is not anonymously serving the ${page.label} page (${verdict.reason}).`, fix));
       continue;
     }

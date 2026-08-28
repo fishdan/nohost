@@ -65,7 +65,7 @@ The script created here is the **master app** for this checkout. Hello World is 
    ```bash
    npm run deploy
    ```
-6. Re-run `npm run doctor`. If the `/exec` URL is not anonymous, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run the doctor. If guestbook **See the guestbook** fails because Sheets is not authorized, ask the owner to open the printed `/exec?page=view` URL while signed in and approve Google Sheets access. Do not use the Apps Script editor, and do not pick a function from the Run dropdown.
+6. Re-run `npm run doctor`. If the `/exec` URL is not anonymous, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run the doctor. If guestbook **See the guestbook** fails because Sheets is not authorized, or the human sees Google Drive **You need access**, they are probably signed into the wrong Google account. Ask them to sign in as the clasp login email the doctor printed, then open the printed `/exec?page=view` URL and approve Google Sheets access. Do not use the Apps Script editor, and do not pick a function from the Run dropdown.
 
 Do not claim the site is public until the doctor says **Public site: visible**. Do not commit `.clasp.json` or `.secrets/`. After first-run, later work only changes `src/`, then pushes/redeploys this same master app.
 
@@ -109,7 +109,7 @@ At the start of every session, you must complete the following steps before begi
 9. Validate SpecKit (`specify --version` or `specify --help`). If it fails, ask the human for assistance. The doctor warns when SpecKit is missing; AI sessions still require it.
 10. Determine the technology stack.
 11. Verify constitution availability (read and honor `.specify/memory/constitution.md`).
-12. Review active specifications (e.g., `spec.md`, `plan.md`, `tasks.md`).
+12. Review active specifications (e.g., `spec.md`, `plan.md`, `tasks.md`, `notes.md`). Before clasp create, deploy, Sheets auth, or telling a human which URL to open, read `specs/0/0.008-master-app-operability/notes.md`.
 13. Recommend next work.
 
 MONTHLY SECURITY AUDIT
