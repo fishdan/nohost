@@ -1,3 +1,52 @@
 <script>
-  // Keep client-side behavior in this partial so future pages can share it.
+  const form = document.getElementById('guestbook-form');
+  if (form) {
+    const status = document.getElementById('form-status');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const button = form.querySelector('button');
+      button.disabled = true;
+      status.textContent = 'Submitting…';
+      google.script.run
+        .withSuccessHandler((result) => {
+          status.textContent = result.message;
+          if (result.ok) form.reset();
+          button.disabled = false;
+        })
+        .withFailureHandler(() => {
+          status.textContent = 'The guestbook is unavailable right now. Please try again later.';
+          button.disabled = false;
+        })
+        .submitGuestbookEntry({ name: form.name.value, city: form.city.value });
+    });
+  }
+
+  const list = document.getElementById('guestbook-entries');
+  if (list) {
+    const status = document.getElementById('guestbook-status');
+    google.script.run
+      .withSuccessHandler((result) => {
+        if (!result.ok) {
+          status.textContent = result.message;
+          return;
+        }
+        if (!result.entries.length) {
+          status.textContent = 'Be the first to sign the guestbook.';
+          return;
+        }
+        result.entries.forEach((entry) => {
+          const item = document.createElement('li');
+          const name = document.createElement('strong');
+          const city = document.createElement('span');
+          name.textContent = entry.name;
+          city.textContent = ` — ${entry.city}`;
+          item.append(name, city);
+          list.append(item);
+        });
+        status.hidden = true;
+        list.hidden = false;
+      })
+      .withFailureHandler(() => { status.textContent = 'The guestbook is unavailable right now.'; })
+      .getGuestbookEntries();
+  }
 </script>

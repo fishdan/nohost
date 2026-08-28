@@ -1,5 +1,19 @@
 # Progress Log
 
+## 2026-08-28 — Visitor guestbook implementation and deployment
+
+- Added routed **Sign the guestbook** and **See the guestbook** pages backed by server-side Apps Script functions.
+- Added a shared tested validation module: names and cities are normalized, required, limited to 80 characters, and rendered with DOM text nodes to prevent HTML injection.
+- Added private Google Sheet integration via the untracked `GUESTBOOK_SPREADSHEET_ID` Script Property, the `Visitors` worksheet, append locking, and a short duplicate-submission throttle. The underlying Sheet is not embedded or exposed to visitors.
+- Added build and validation tests. Validation: `npm run build`, `npm test` (25 passing), and `git diff --check`.
+- Pushed the source and redeployed the existing public Apps Script deployment at versions 2 and 3. The initial Sheets setup awaits one owner authorization in the Apps Script editor; anonymous `?page=view` returns Google access denied until that approval is completed.
+
+## 2026-08-27 — Visitor guestbook specification
+
+- Created SpecKit feature `0.007-visitor-guestbook` on branch `feature/visitor-guestbook`.
+- Defined a public name-and-city submission page, a read-only public guestbook view backed by a private owner-controlled Google Sheet, validation, privacy, and approval boundaries.
+- No application code, spreadsheet, or deployment was changed in this planning step.
+
 ## 2026-08-27 — Startup permission gates
 
 - Added SpecKit entry `0.006-startup-permission-gates`.
