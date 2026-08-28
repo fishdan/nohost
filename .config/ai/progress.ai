@@ -1,5 +1,11 @@
 # Progress Log
 
+## 2026-08-28 — Project mission added to constitution
+
+- Amended `.specify/memory/constitution.md` from 1.0 to 1.1.
+- Added a **Project Mission**: a functioning public Google Apps Script website, maintainable by a human and an AI assistant, that may integrate many features over time.
+- Retitled the document from FishDev Default Constitution to nohost Constitution. Existing principles I–XX were preserved.
+
 ## 2026-08-28 — Guestbook authorization handoff
 
 - Added `handoff.md` with the owner-only Apps Script authorization steps required to activate the deployed guestbook.

@@ -1,12 +1,37 @@
-# FishDev Default Constitution
+<!--
+Sync Impact Report
+- Version change: 1.0 → 1.1
+- Modified principles: none
+- Added sections: Project Mission
+- Removed sections: none
+- Follow-up TODOs: none
+-->
 
-Version: 1.0
+# nohost Constitution
 
-This constitution defines the engineering principles governing all repositories set up with the FishDev CLI tool.
+Version: 1.1
 
-This constitution is authoritative once adopted by a repository.
+Ratified: 2026-08-13
+
+Last Amended: 2026-08-28
+
+This constitution defines the engineering principles for this repository.
+
+It was adopted from the FishDev default constitution and is authoritative for nohost.
 
 All humans and AI assistants working within the repository must follow these principles.
+
+---
+
+# Project Mission
+
+This repository exists to create and operate a functioning public website hosted as a Google Apps Script web app.
+
+The website MUST remain maintainable by a human maintainer and by an AI assistant.
+
+The website MAY integrate many different features developed in this repository over time.
+
+Features, tooling, and process MUST serve that mission: a working site that both a human and an AI assistant can keep running and extend.
 
 ---
 
@@ -399,7 +424,7 @@ Implementation alone does not constitute completion.
 
 # Guiding Principle
 
-Build systems that a competent engineer can understand, verify, test, maintain, and extend years later.
+Build a functioning Google Apps Script website that a human and an AI assistant can understand, verify, test, maintain, and extend years later.
 
 Favor clarity over cleverness.
 Favor discipline over convenience.
