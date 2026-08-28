@@ -6,15 +6,20 @@ import {
   clasprcLooksValid,
   clasprcRemediation,
   claspJsonRemediation,
+  classifyAnonymousPage,
   classifyPublicResponse,
   createIo,
   extractJsonValue,
   formatReport,
   isLatestAlias,
   isPlaceholderScriptId,
+  looksLikeSheetsAuthorizationFailure,
   parseArgs,
   parseNpmDoctorOutput,
+  PUBLIC_HOME_MARKERS,
+  publicSiteRemediation,
   runChecks,
+  sheetsAuthorizationRemediation,
   summarize,
   versionedDeploymentIds,
   webAppExecUrl,
@@ -126,10 +131,32 @@ test('extractJsonValue ignores leading clasp spinner text', () => {
   assert.equal(parsed[0].deploymentId, 'abc');
 });
 
-test('classifyPublicResponse requires anonymous Hello World HTML', () => {
-  assert.equal(classifyPublicResponse({ status: 200, body: '<h1>Hello, world!</h1>' }).ok, true);
-  assert.equal(classifyPublicResponse({ status: 302, location: 'https://accounts.google.com/ServiceLogin' }).ok, false);
-  assert.equal(classifyPublicResponse({ status: 200, body: '<html>sign in</html>' }).ok, false);
+test('classifyAnonymousPage requires current home markers, not Hello World', () => {
+  const home = '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+  assert.equal(classifyAnonymousPage({ status: 200, body: home }, PUBLIC_HOME_MARKERS).ok, true);
+  assert.equal(classifyPublicResponse({ status: 200, body: home }).ok, true);
+  assert.equal(classifyAnonymousPage({ status: 200, body: '<h1>Hello, world!</h1>' }, PUBLIC_HOME_MARKERS).ok, false);
+  assert.equal(classifyAnonymousPage({ status: 302, location: 'https://accounts.google.com/ServiceLogin' }, PUBLIC_HOME_MARKERS).ok, false);
+  assert.equal(classifyAnonymousPage({ status: 200, body: '<html>sign in</html>' }, PUBLIC_HOME_MARKERS).ok, false);
+});
+
+test('Sheets authorization failures tell the owner to open ?page=view, not the editor', () => {
+  assert.equal(
+    looksLikeSheetsAuthorizationFailure({ body: 'Exception: You do not have permission to call SpreadsheetApp.create' }),
+    true,
+  );
+  const verdict = classifyAnonymousPage(
+    { status: 200, body: 'Authorization required to use SpreadsheetApp' },
+    ['guestbook-entries'],
+  );
+  assert.equal(verdict.ok, false);
+  assert.equal(verdict.kind, 'sheets-auth');
+  const fix = sheetsAuthorizationRemediation('https://script.google.com/macros/s/pub-id/exec?page=view');
+  assert.match(fix, /\?page=view/);
+  assert.match(fix, /signed in as the site owner/);
+  assert.match(fix, /Do not use the Apps Script editor/);
+  assert.doesNotMatch(fix, /getGuestbookEntries/);
+  assert.match(publicSiteRemediation('https://script.google.com/macros/s/pub-id/exec'), /Do not create a second Apps Script project/);
 });
 
 test('clasprc remediation tells the user how to login and store credentials', () => {
@@ -139,25 +166,99 @@ test('clasprc remediation tells the user how to login and store credentials', ()
   assert.match(text, /script\.google\.com\/home\/usersettings/);
 });
 
-test('clasp project remediation creates a new standalone script, not type webapp', () => {
+test('clasp project remediation creates a new standalone script only when the master app is missing', () => {
   const text = claspJsonRemediation();
   assert.match(text, /--type standalone/);
   assert.doesNotMatch(text, /--type webapp/);
   assert.match(text, /npm run deploy/);
   assert.match(text, /do not attach a random existing script/i);
+  assert.match(text, /do not create another script/i);
 });
 
-test('README and start.ai tell an AI to finish first-run through public Hello World', async () => {
+test('README and start.ai treat first-run as creating the master app', async () => {
   const readme = await readFile('README.md', 'utf8');
   const start = await readFile('start.ai', 'utf8');
-  assert.match(readme, /Public Hello World: visible/);
+  assert.match(readme, /Public site: visible/);
   assert.match(readme, /Read `start\.ai`/);
   assert.match(readme, /--type standalone/);
   assert.doesNotMatch(readme, /clasp create[^\n]*--type webapp/);
-  assert.match(start, /First-run until Hello World is public/);
+  assert.match(start, /First-run until the public site is visible/);
   assert.match(start, /--type standalone/);
   assert.doesNotMatch(start, /clasp create[^\n]*--type webapp/);
   assert.match(start, /the current task/);
+  assert.match(start, /never create another nohost script/i);
+  assert.match(start, /do not pick a function from the Run dropdown/i);
+});
+
+test('doctor fetches home, sign, and view on the printed /exec URL', async () => {
+  const home = '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+  const pages = {
+    'https://script.google.com/macros/s/pub-id/exec': home,
+    'https://script.google.com/macros/s/pub-id/exec?page=sign': '<form id="guestbook-form"></form>',
+    'https://script.google.com/macros/s/pub-id/exec?page=view': '<ul id="guestbook-entries"></ul>',
+  };
+  const io = mockIo({
+    env: { CLASP_WEB_APP_URL: 'https://script.google.com/macros/s/pub-id/exec' },
+    fetch: async (url) => ({
+      status: 200,
+      headers: { get: () => '' },
+      text: async () => pages[url] || '',
+    }),
+  });
+  io.existing.add('/repo/.secrets/.clasprc.json');
+  io.existing.add('/repo/.clasp.json');
+  io.files['/repo/.secrets/.clasprc.json'] = JSON.stringify({ tokens: { default: { refresh_token: 'x' } } });
+  io.files['/repo/.clasp.json'] = JSON.stringify({ scriptId: '1abcRealScriptId', rootDir: 'dist' });
+  const originalSpawn = io.spawn;
+  io.spawn = (command, args) => {
+    if (command === 'npx' && args[0] === 'clasp' && args[1] === 'status') {
+      return { status: 0, stdout: 'Tracked files:\n', stderr: '' };
+    }
+    return originalSpawn(command, args);
+  };
+
+  const results = await runChecks({}, io);
+  const summary = summarize(results);
+  assert.equal(summary.publicSite, 'visible');
+  assert.equal(results.find((row) => row.id === 'public-home').status, 'pass');
+  assert.equal(results.find((row) => row.id === 'public-sign').status, 'pass');
+  assert.equal(results.find((row) => row.id === 'public-view').status, 'pass');
+  const report = formatReport(results, { color: false });
+  assert.match(report, /Public site: visible/);
+  assert.match(report, /https:\/\/script\.google\.com\/macros\/s\/pub-id\/exec/);
+});
+
+test('view-page Sheets denial uses owner-in-browser remediation', async () => {
+  const io = mockIo({
+    env: { CLASP_WEB_APP_URL: 'https://script.google.com/macros/s/pub-id/exec' },
+    fetch: async (url) => ({
+      status: 200,
+      headers: { get: () => '' },
+      text: async () => {
+        if (String(url).includes('page=view')) return 'Exception: You do not have permission to call SpreadsheetApp.create';
+        if (String(url).includes('page=sign')) return '<form id="guestbook-form"></form>';
+        return '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+      },
+    }),
+  });
+  io.existing.add('/repo/.secrets/.clasprc.json');
+  io.existing.add('/repo/.clasp.json');
+  io.files['/repo/.secrets/.clasprc.json'] = JSON.stringify({ tokens: { default: { refresh_token: 'x' } } });
+  io.files['/repo/.clasp.json'] = JSON.stringify({ scriptId: '1abcRealScriptId', rootDir: 'dist' });
+  const originalSpawn = io.spawn;
+  io.spawn = (command, args) => {
+    if (command === 'npx' && args[0] === 'clasp' && args[1] === 'status') {
+      return { status: 0, stdout: 'Tracked files:\n', stderr: '' };
+    }
+    return originalSpawn(command, args);
+  };
+
+  const results = await runChecks({}, io);
+  const view = results.find((row) => row.id === 'public-view');
+  assert.equal(view.status, 'fail');
+  assert.match(view.fix, /\?page=view/);
+  assert.doesNotMatch(view.fix, /getGuestbookEntries/);
+  assert.equal(summarize(results).publicSite, 'not visible');
 });
 
 test('fresh clone without clasp credentials fails deploy checks with remediations', async () => {
@@ -165,7 +266,7 @@ test('fresh clone without clasp credentials fails deploy checks with remediation
   const summary = summarize(results);
   assert.equal(summary.developReady, true);
   assert.equal(summary.deployReady, false);
-  assert.equal(summary.publicHelloWorld, 'unchecked');
+  assert.equal(summary.publicSite, 'unchecked');
   const clasprc = results.find((row) => row.id === 'clasprc');
   assert.equal(clasprc.status, 'fail');
   assert.match(clasprc.fix, /npx clasp login/);
@@ -233,6 +334,14 @@ test('missing git is reported with an install hint instead of a cryptic spawn er
   const git = results.find((row) => row.id === 'git');
   assert.equal(git.status, 'fail');
   assert.match(git.fix, /git-scm\.com/);
+});
+
+test('production deploy uses clasp OAuth and does not require Cloud WIF', async () => {
+  const yml = await readFile('.github/workflows/deploy.yml', 'utf8');
+  assert.match(yml, /CLASPRC_JSON/);
+  assert.match(yml, /CLASP_PROJECT_JSON/);
+  assert.match(yml, /CLASP_DEPLOYMENT_ID/);
+  assert.match(yml, /vars\.GOOGLE_WORKLOAD_IDENTITY_PROVIDER != ''/);
 });
 
 test('CI installs latest Node and latest npm before the doctor gate', async () => {

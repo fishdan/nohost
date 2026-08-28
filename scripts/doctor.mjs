@@ -43,7 +43,7 @@ export function usage() {
   return `Usage: node scripts/doctor.mjs [--ci] [--fix]
 
 Checks that this checkout can develop, authenticate with clasp, and reach
-the public Hello World page.
+the public site on this checkout's master Apps Script app.
 
   --ci   Toolchain only (Node, npm, git, node_modules). For GitHub Actions.
   --fix  Safe remediations only: npm install, create .secrets/, copy clasp
@@ -103,25 +103,49 @@ export function webAppExecUrl(deploymentId) {
   return `https://script.google.com/macros/s/${deploymentId}/exec`;
 }
 
-export function classifyPublicResponse({ status, location = '', body = '' }) {
+export const PUBLIC_HOME_MARKERS = ['Sign the guestbook', 'See the guestbook'];
+export const PUBLIC_SIGN_MARKERS = ['guestbook-form'];
+export const PUBLIC_VIEW_MARKERS = ['guestbook-entries'];
+
+export function looksLikeSheetsAuthorizationFailure({ location = '', body = '' } = {}) {
+  const text = `${location}\n${body}`;
+  return (
+    /Authorization required/i.test(text) ||
+    /needs authorization/i.test(text) ||
+    /has not been authorized/i.test(text) ||
+    /You do not have permission to call SpreadsheetApp/i.test(text) ||
+    /Exception:.*SpreadsheetApp/i.test(text) ||
+    /the guestbook is unavailable/i.test(text)
+  );
+}
+
+export function classifyAnonymousPage({ status, location = '', body = '' }, markers = []) {
   const loc = String(location);
   const text = String(body);
   if (/accounts\.google\.com|ServiceLogin/i.test(loc) || /accounts\.google\.com|ServiceLogin/i.test(text)) {
-    return { ok: false, reason: 'redirects to Google sign-in; set Who has access to Anyone' };
+    return { ok: false, kind: 'sign-in', reason: 'redirects to Google sign-in; set Who has access to Anyone' };
   }
   if (status === 401 || status === 403) {
-    return { ok: false, reason: `HTTP ${status}; set Who has access to Anyone` };
+    return { ok: false, kind: 'forbidden', reason: `HTTP ${status}; set Who has access to Anyone` };
   }
   if (status >= 300 && status < 400) {
-    return { ok: false, reason: `unexpected redirect (${status})` };
+    return { ok: false, kind: 'redirect', reason: `unexpected redirect (${status})` };
   }
-  if (status === 200 && /Hello, world!/i.test(text)) {
-    return { ok: true, reason: 'HTTP 200 with Hello, world!' };
+  if (looksLikeSheetsAuthorizationFailure({ location, body })) {
+    return { ok: false, kind: 'sheets-auth', reason: 'Google Sheets access has not been granted by the site owner' };
   }
   if (status === 200) {
-    return { ok: false, reason: 'HTTP 200 but Hello, world! was not in the response' };
+    const missing = markers.filter((marker) => !text.includes(marker));
+    if (missing.length) {
+      return { ok: false, kind: 'content', reason: `HTTP 200 but missing ${missing.join(', ')}` };
+    }
+    return { ok: true, kind: 'ok', reason: 'HTTP 200 with expected page content' };
   }
-  return { ok: false, reason: `HTTP ${status || 'no response'}` };
+  return { ok: false, kind: 'http', reason: `HTTP ${status || 'no response'}` };
+}
+
+export function classifyPublicResponse(page, markers = PUBLIC_HOME_MARKERS) {
+  return classifyAnonymousPage(page, markers);
 }
 
 export function clasprcRemediation({ homeExists = false, rootExists = false } = {}) {
@@ -139,21 +163,34 @@ export function clasprcRemediation({ homeExists = false, rootExists = false } = 
 
 export function claspJsonRemediation() {
   return [
-    'Create a NEW Apps Script project for this repo (do not attach a random existing script):',
+    'If this checkout already has a real .clasp.json from first-run, do not create another script. Use that master app.',
+    'Create a NEW Apps Script project only when .clasp.json is missing (do not attach a random existing script):',
     'npm run build',
     'clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist',
     'Then publish the first public URL: npm run deploy',
     'Re-run: npm run doctor',
-    'Only copy .clasp.json.example if the human already named this repo\'s existing script ID.',
+    'Only copy .clasp.json.example if the human already named this repo\'s existing master script ID.',
   ].join('\n');
 }
 
-export function publicHelloWorldRemediation() {
+export function publicSiteRemediation(url) {
+  const execUrl = url || 'the public /exec URL doctor printed';
   return [
-    'Build, push, and create/update a versioned web-app deployment:',
-    'npm run deploy',
-    'In Apps Script (npx clasp open): Deploy → Manage deployments → edit the web app.',
+    `Open this URL while signed in as the site owner and approve Google access if asked:`,
+    execUrl,
+    'If signed-out visitors still get 403: npx clasp open → Deploy → Manage deployments → edit the web app.',
     'Set Execute as: Me, Who has access: Anyone, then Deploy.',
+    'Do not create a second Apps Script project. Do not pick a function from the Run dropdown.',
+    'Re-run: npm run doctor',
+  ].join('\n');
+}
+
+export function sheetsAuthorizationRemediation(viewUrl) {
+  return [
+    'Open this guestbook page while signed in as the site owner:',
+    viewUrl || 'the public /exec URL with ?page=view',
+    'Approve Google Sheets access if Google asks, then wait for the page to load.',
+    'Do not use the Apps Script editor, and do not pick a function from the Run dropdown.',
     'Re-run: npm run doctor',
   ].join('\n');
 }
@@ -428,41 +465,84 @@ async function fetchPublicPage(io, url) {
   return { status: 0, location: current, body: '' };
 }
 
-async function checkPublicHelloWorld(io, previous) {
+function normalizeExecUrl(url) {
+  return String(url || '')
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\?.*$/, '');
+}
+
+function resolvePublicExecUrl(io, previous) {
   const configuredUrl = io.env.CLASP_WEB_APP_URL;
-  let url = configuredUrl;
-  if (!url) {
-    if (previous.some((row) => ['clasprc', 'clasp-json', 'clasp-status', 'node-modules'].includes(row.id) && (row.status === 'fail' || row.status === 'skip'))) {
-      return result('skip', 'public-hello-world', 'public', 'Skipped public Hello World check until clasp is configured.');
-    }
-    const ran = spawnText(io, 'npx', ['clasp', 'list-deployments', '--json'], { env: claspEnv(io), timeout: 45_000 });
-    if (ran.error || ran.status !== 0) {
-      return result('fail', 'public-hello-world', 'public', 'Could not list clasp deployments to find a public URL.', publicHelloWorldRemediation());
-    }
-    let deployments;
-    try {
-      deployments = extractJsonValue(ran.stdout);
-    } catch {
-      return result('fail', 'public-hello-world', 'public', 'clasp list-deployments --json did not return JSON.', publicHelloWorldRemediation());
-    }
-    const ids = versionedDeploymentIds(deployments);
-    if (!ids.length) {
-      return result('fail', 'public-hello-world', 'public', 'No versioned web-app deployment exists yet.', publicHelloWorldRemediation());
-    }
-    url = webAppExecUrl(ids[0]);
+  if (configuredUrl) return { ok: true, url: normalizeExecUrl(configuredUrl) };
+  if (previous.some((row) => ['clasprc', 'clasp-json', 'clasp-status', 'node-modules'].includes(row.id) && (row.status === 'fail' || row.status === 'skip'))) {
+    return { ok: false, skip: true, message: 'Skipped public site checks until clasp is configured.' };
+  }
+  const ran = spawnText(io, 'npx', ['clasp', 'list-deployments', '--json'], { env: claspEnv(io), timeout: 45_000 });
+  if (ran.error || ran.status !== 0) {
+    return { ok: false, message: 'Could not list clasp deployments to find a public URL.' };
+  }
+  let deployments;
+  try {
+    deployments = extractJsonValue(ran.stdout);
+  } catch {
+    return { ok: false, message: 'clasp list-deployments --json did not return JSON.' };
+  }
+  const ids = versionedDeploymentIds(deployments);
+  if (!ids.length) {
+    return { ok: false, message: 'No versioned web-app deployment exists yet.' };
+  }
+  return { ok: true, url: webAppExecUrl(ids[0]) };
+}
+
+function viewPageFix(viewUrl, verdict) {
+  if (verdict.kind === 'sign-in' || verdict.kind === 'forbidden') return publicSiteRemediation(viewUrl);
+  if (verdict.kind === 'sheets-auth' || verdict.kind === 'content') return sheetsAuthorizationRemediation(viewUrl);
+  return publicSiteRemediation(viewUrl);
+}
+
+async function checkPublicPages(io, previous) {
+  const resolved = resolvePublicExecUrl(io, previous);
+  if (resolved.skip) {
+    return [
+      result('skip', 'public-home', 'public', resolved.message),
+      result('skip', 'public-sign', 'public', 'Skipped until the public URL is known.'),
+      result('skip', 'public-view', 'public', 'Skipped until the public URL is known.'),
+    ];
+  }
+  if (!resolved.ok) {
+    return [
+      result('fail', 'public-home', 'public', resolved.message, publicSiteRemediation()),
+      result('skip', 'public-sign', 'public', 'Skipped because the public URL could not be resolved.'),
+      result('skip', 'public-view', 'public', 'Skipped because the public URL could not be resolved.'),
+    ];
   }
 
-  let page;
-  try {
-    page = await fetchPublicPage(io, url);
-  } catch (error) {
-    return result('fail', 'public-hello-world', 'public', `Could not fetch ${url} (${error.message}).`, publicHelloWorldRemediation());
+  const url = resolved.url;
+  const pages = [
+    { id: 'public-home', suffix: '', markers: PUBLIC_HOME_MARKERS, label: 'home' },
+    { id: 'public-sign', suffix: '?page=sign', markers: PUBLIC_SIGN_MARKERS, label: 'sign' },
+    { id: 'public-view', suffix: '?page=view', markers: PUBLIC_VIEW_MARKERS, label: 'view' },
+  ];
+  const results = [];
+  for (const page of pages) {
+    const pageUrl = `${url}${page.suffix}`;
+    let fetched;
+    try {
+      fetched = await fetchPublicPage(io, pageUrl);
+    } catch (error) {
+      results.push(result('fail', page.id, 'public', `Could not fetch ${pageUrl} (${error.message}).`, publicSiteRemediation(pageUrl)));
+      continue;
+    }
+    const verdict = classifyAnonymousPage(fetched, page.markers);
+    if (!verdict.ok) {
+      const fix = page.id === 'public-view' ? viewPageFix(pageUrl, verdict) : publicSiteRemediation(pageUrl);
+      results.push(result('fail', page.id, 'public', `${pageUrl} is not anonymously serving the ${page.label} page (${verdict.reason}).`, fix));
+      continue;
+    }
+    results.push(result('pass', page.id, 'public', `${pageUrl} — ${verdict.reason}`));
   }
-  const verdict = classifyPublicResponse(page);
-  if (!verdict.ok) {
-    return result('fail', 'public-hello-world', 'public', `${url} is not anonymously serving Hello World (${verdict.reason}).`, publicHelloWorldRemediation());
-  }
-  return result('pass', 'public-hello-world', 'public', `${url} — ${verdict.reason}`);
+  return results;
 }
 
 export async function runChecks(options = {}, io = createIo()) {
@@ -479,7 +559,7 @@ export async function runChecks(options = {}, io = createIo()) {
     results.push(checkClasprc(io));
     results.push(checkClaspJson(io));
     results.push(checkClaspStatus(io, results));
-    results.push(await checkPublicHelloWorld(io, results));
+    results.push(...(await checkPublicPages(io, results)));
   }
   return results;
 }
@@ -489,15 +569,15 @@ export function summarize(results) {
   const developReady = !failed.some((row) => row.group === 'develop');
   const deployRows = results.filter((row) => row.group === 'deploy');
   const deployReady = deployRows.length ? developReady && !failed.some((row) => row.group === 'deploy') : null;
-  const publicRow = results.find((row) => row.id === 'public-hello-world');
-  let publicHelloWorld = 'unchecked';
-  if (publicRow?.status === 'pass') publicHelloWorld = 'visible';
-  else if (publicRow?.status === 'fail') publicHelloWorld = 'not visible';
+  const publicRows = results.filter((row) => row.group === 'public');
+  let publicSite = 'unchecked';
+  if (publicRows.some((row) => row.status === 'fail')) publicSite = 'not visible';
+  else if (publicRows.length && publicRows.every((row) => row.status === 'pass')) publicSite = 'visible';
   return {
     ok: failed.length === 0,
     developReady,
     deployReady,
-    publicHelloWorld,
+    publicSite,
     failed,
   };
 }
@@ -528,11 +608,11 @@ export function formatReport(results, { color = false, actions = [] } = {}) {
   const summary = summarize(results);
   lines.push(`Develop: ${summary.developReady ? 'ready' : 'not ready'}`);
   lines.push(`Deploy:  ${summary.deployReady === true ? 'ready' : summary.deployReady === false ? 'not ready' : 'unchecked'}`);
-  lines.push(`Public Hello World: ${summary.publicHelloWorld}`);
+  lines.push(`Public site: ${summary.publicSite}`);
   lines.push('');
   if (summary.ok) {
-    if (summary.publicHelloWorld === 'visible') {
-      lines.push('Doctor passed. This checkout can develop and the public Hello World page is reachable.');
+    if (summary.publicSite === 'visible') {
+      lines.push('Doctor passed. This checkout can develop and the public site on the master app is reachable.');
     } else {
       lines.push('Doctor passed the checks that were run.');
     }
@@ -541,7 +621,7 @@ export function formatReport(results, { color = false, actions = [] } = {}) {
     if (!summary.developReady) {
       lines.push('Halt feature work until develop checks pass (latest Node/npm, git, npm install).');
     } else {
-      lines.push('Local build/test can continue, but do not claim the Hello World page is public until deploy checks pass.');
+      lines.push('Local build/test can continue, but do not claim the public site is visible until public checks pass.');
     }
   }
   return lines.join('\n');
