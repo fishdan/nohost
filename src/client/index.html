@@ -6,13 +6,38 @@
   </head>
   <body>
     <main class="site-shell">
-      <p class="eyebrow">Web App</p>
-      <h1>Hello, world!</h1>
-      <p class="intro">The Web App is connected and ready for its first community features.</p>
-      <section class="card" aria-labelledby="next-heading">
-        <h2 id="next-heading">A new beginning</h2>
-        <p>Community announcements, resources, and useful links will be added here as the site grows.</p>
-      </section>
+      <p class="eyebrow">Community guestbook</p>
+      <nav aria-label="Guestbook">
+        <a href="?page=sign">Sign the guestbook</a>
+        <a href="?page=view">See the guestbook</a>
+      </nav>
+      <? if (page === 'sign') { ?>
+        <h1>Sign the guestbook</h1>
+        <p class="intro">Tell us your name and the city you call home.</p>
+        <form class="card" id="guestbook-form">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" maxlength="80" autocomplete="name" required>
+          <label for="city">City</label>
+          <input id="city" name="city" type="text" maxlength="80" autocomplete="address-level2" required>
+          <button type="submit">Sign the guestbook</button>
+          <p id="form-status" role="status" aria-live="polite"></p>
+        </form>
+      <? } else if (page === 'view') { ?>
+        <h1>See the guestbook</h1>
+        <p class="intro">Friends and visitors from near and far.</p>
+        <section class="card" aria-labelledby="guestbook-heading">
+          <h2 id="guestbook-heading">Guestbook entries</h2>
+          <p id="guestbook-status" role="status" aria-live="polite">Loading entries…</p>
+          <ul id="guestbook-entries" class="guestbook-list" hidden></ul>
+        </section>
+      <? } else { ?>
+        <h1>Welcome</h1>
+        <p class="intro">Leave a hello, then see who has visited from around the world.</p>
+        <section class="card" aria-labelledby="next-heading">
+          <h2 id="next-heading">Join the guestbook</h2>
+          <p><a href="?page=sign">Sign the guestbook</a> or <a href="?page=view">see the guestbook</a>.</p>
+        </section>
+      <? } ?>
     </main>
     <?!= include('scripts'); ?>
   </body>
