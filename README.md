@@ -1,6 +1,6 @@
 # nohost
 
-A small public website hosted as a Google Apps Script web app. You do not need to be a programmer to get it running.
+A small public website hosted as a Google Apps Script web app. You do not need to be a programmer to get it running.  If you have a gmail account you can have a website using nohost.
 
 ## Get the public site on the internet
 
