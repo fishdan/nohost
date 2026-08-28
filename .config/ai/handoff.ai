@@ -1,5 +1,13 @@
 # Handoff
 
+## 2026-08-28 — Master app owner clicks
+
+- Branch work: `0.008-master-app-operability`. Guestbook and later features belong on this checkout's first-run Apps Script project.
+- Current task: the owner must open the printed master `/exec?page=view` URL while signed in, approve Google access, and set Who has access to Anyone if signed-out visitors still get 403.
+- Public URL: https://script.google.com/macros/s/AKfycbxXJwRMIr1CxEgSZcl3X45W4Nkd7NH6Xl__R6rjKqPzHDCKsGREwzAwXbQ62bCB3iyfbA/exec
+- Do not `clasp create`. Do not run a function in the Apps Script editor.
+- See root `handoff.md`.
+
 ## 2026-08-28 — Visitor guestbook authorization
 
 - Branch: `main`; visitor guestbook PR #4 is merged and its Apps Script deployment contains the feature.

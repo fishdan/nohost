@@ -42,11 +42,11 @@ The AI should state the specific action, why it is needed, and its scope. A brow
 
 ---
 
-# First-run until Hello World is public
+# First-run until the public site is visible
 
-On a fresh clone (missing `.secrets/.clasprc.json`, missing or placeholder `.clasp.json`, or doctor not reporting **Public Hello World: visible**), finishing first-run **is** the current task. Do not wait for another human prompt. Walk the human through the steps below, pause only for browser clicks, then re-run `npm run doctor` until it prints `Public Hello World: visible`.
+On a fresh clone (missing `.secrets/.clasprc.json`, missing or placeholder `.clasp.json`, or doctor not reporting **Public site: visible**), finishing first-run **is** the current task. Do not wait for another human prompt. Walk the human through the steps below, pause only for browser clicks, then re-run `npm run doctor` until it prints `Public site: visible`.
 
-Do not attach this repository to a random existing Apps Script project from `clasp list-scripts`. Only reuse a script ID if the human says that project is this nohost app.
+The script created here is the **master app** for this checkout. Hello World is only the first public version. Every later feature (guestbook and anything after) is published into this same Apps Script project, same `/exec` URL, and same `.clasp.json`. After `.clasp.json` exists, **never create another nohost script**. Do not attach this repository to a random existing Apps Script project from `clasp list-scripts`. Only reuse a script ID if the human says that project is this checkout's master nohost app.
 
 1. Ask permission before installing or updating Node/npm, then run `nvm install` and `nvm use` in the repo root (`.nvmrc` is the alias `node`). If npm is still behind, separately ask permission before `npm install -g npm@latest`. Re-run `npm run doctor -- --ci` until develop checks pass. `npm run doctor -- --fix` may run `npm install` and copy an existing `~/.clasprc.json` into `.secrets/`.
 2. Ask the human to enable the Apps Script API: [script.google.com/home/usersettings](https://script.google.com/home/usersettings). Wait until they confirm the toggle is on. Ask permission before starting the subsequent clasp authentication command.
@@ -65,9 +65,9 @@ Do not attach this repository to a random existing Apps Script project from `cla
    ```bash
    npm run deploy
    ```
-6. Re-run `npm run doctor`. If the `/exec` URL is not anonymous, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run the doctor.
+6. Re-run `npm run doctor`. If the `/exec` URL is not anonymous, open the project (`npx clasp open`), edit the web-app deployment, set **Who has access** to **Anyone**, save, then re-run the doctor. If guestbook **See the guestbook** fails because Sheets is not authorized, ask the owner to open the printed `/exec?page=view` URL while signed in and approve Google Sheets access. Do not use the Apps Script editor, and do not pick a function from the Run dropdown.
 
-Do not claim the site is public until the doctor says it is visible. Do not commit `.clasp.json` or `.secrets/`.
+Do not claim the site is public until the doctor says **Public site: visible**. Do not commit `.clasp.json` or `.secrets/`. After first-run, later work only changes `src/`, then pushes/redeploys this same master app.
 
 ---
 
@@ -83,13 +83,13 @@ Clasp OAuth credentials belong in `.secrets/` (git-ignored). The first-run secti
    npx clasp login --auth .secrets/.clasprc.json
    ```
    If login wrote `~/.clasprc.json`: `npm run doctor -- --fix`.
-3. **Create a new project** (preferred):
+3. **Create a new project** only when `.clasp.json` is missing (this is the master app; never create a second one):
    ```bash
    npm run build
    clasp_config_auth=.secrets/.clasprc.json npx clasp create --title "nohost Web App" --type standalone --rootDir dist
    npm run deploy
    ```
-   Connect an existing script only when the human identifies it as this nohost app: copy `.clasp.json.example` to `.clasp.json` and set that script ID with `"rootDir": "dist"`.
+   Connect an existing script only when the human identifies it as this checkout's master nohost app: copy `.clasp.json.example` to `.clasp.json` and set that script ID with `"rootDir": "dist"`.
 4. **Re-run**: `npm run doctor`
 
 ---
@@ -104,7 +104,7 @@ At the start of every session, you must complete the following steps before begi
 4. Read `.config/ai/handoff.ai` if it exists.
 5. Run the environment gate. Prefer `npm run doctor`. If `node_modules` is missing, `node scripts/doctor.mjs` still works because the doctor uses only Node built-ins. If Node or npm is missing or not latest, install with `nvm install node` (the `.nvmrc` alias) and stop until `npm run doctor -- --ci` passes.
 6. If the doctor reports develop failures (Node, npm, git, `node_modules`), remediate and re-run before continuing. Safe automatic remediations: `npm install` or `npm run doctor -- --fix`. Git missing is a hard stop: tell the human to install Git from https://git-scm.com/ — do not treat a failed `git branch` spawn as a repo problem.
-7. If the doctor reports clasp or public Hello World failures, execute the **First-run until Hello World is public** section with the human. On a fresh clone that is not yet publicly visible, that first-run **is** the assigned task. Local build and test may continue only after develop checks pass. Do not claim the Hello World page is publicly available until the doctor reports it visible.
+7. If the doctor reports clasp or public site failures, execute the **First-run until the public site is visible** section with the human. On a fresh clone that is not yet publicly visible, that first-run **is** the assigned task. If `.clasp.json` already exists, do not `clasp create` again; deploy to the existing master app. Local build and test may continue only after develop checks pass. Do not claim the public site is available until the doctor reports **Public site: visible**.
 8. Determine the current git branch (`git branch --show-current`, `git status --short`) after git has been confirmed present.
 9. Validate SpecKit (`specify --version` or `specify --help`). If it fails, ask the human for assistance. The doctor warns when SpecKit is missing; AI sessions still require it.
 10. Determine the technology stack.
@@ -129,7 +129,7 @@ Do not diagnose clasp or public visibility by hand first. Run `npm run doctor` a
 
 - Runs `npm doctor connection registry environment versions` (git, registry, PATH, and **latest** Node/npm). `.nvmrc` contains `node` so the version is not pinned to a major number.
 - Checks that Node and npm run, git is present, `.nvmrc` is a latest alias, and `node_modules` is installed.
-- Checks clasp credentials at `.secrets/.clasprc.json`, `.clasp.json` (not the example placeholder), `clasp status`, and anonymous Hello World at the versioned `/exec` URL.
+- Checks clasp credentials at `.secrets/.clasprc.json`, `.clasp.json` (not the example placeholder), `clasp status`, and anonymous pages at the versioned `/exec` URL (current home, `?page=sign`, and `?page=view`).
 
 If you need to re-check a known URL without waiting for clasp to list deployments:
 
@@ -208,7 +208,7 @@ Handoff:
 <summary or none>
 
 Doctor:
-<develop ready/not ready; deploy ready/not ready; public Hello World: visible/not visible/unchecked>
+<develop ready/not ready; deploy ready/not ready; public site: visible/not visible/unchecked>
 <summary of failures and remediations, or passed>
 
 Recommended Next Task:

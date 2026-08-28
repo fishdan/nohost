@@ -15,4 +15,6 @@ test('build output contains the Apps Script entry point and page partials', asyn
   assert.match(guestbookLogic, /function validateGuestbookEntry/);
   assert.doesNotMatch(guestbookLogic, /export /);
   for (const file of ['appsscript.json', 'index.html', 'styles.html', 'scripts.html', 'guestbook-logic.js']) await access(`dist/${file}`);
+  const manifest = JSON.parse(await readFile('dist/appsscript.json', 'utf8'));
+  assert.equal(manifest.webapp.access, 'ANYONE_ANONYMOUS');
 });

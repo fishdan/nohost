@@ -29,6 +29,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - id: auth
+        if: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER != '' }}
         uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
@@ -38,7 +39,9 @@ jobs:
       - name: Write clasp project configuration
         env:
           CLASP_PROJECT_JSON: ${{ secrets.CLASP_PROJECT_JSON }}
-        run: printf '%s' "$CLASP_PROJECT_JSON" > .clasp.json
+        run: |
+          test -n "$CLASP_PROJECT_JSON"
+          printf '%s' "$CLASP_PROJECT_JSON" > .clasp.json
       - name: Write clasp OAuth credentials
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
@@ -48,4 +51,6 @@ jobs:
       - name: Push and deploy Apps Script
         env:
           CLASP_DEPLOYMENT_ID: ${{ vars.CLASP_DEPLOYMENT_ID }}
-        run: npm run deploy
+        run: |
+          test -n "$CLASP_DEPLOYMENT_ID"
+          npm run deploy

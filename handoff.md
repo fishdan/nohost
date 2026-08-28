@@ -1,12 +1,17 @@
-# Guestbook authorization handoff
+# Guestbook authorization
 
-The visitor guestbook code is merged and deployed. One owner-only Google Apps Script authorization remains before anonymous visitors can use the guestbook.
+The visitor guestbook lives on this checkout's **master** Apps Script web app (the same project first-run created). Do not create a second script, and do not use the Apps Script editor Run dropdown.
 
-1. Sign in as `fishdan@gmail.com` and open:
-   `https://script.google.com/d/1SQW7WSdaWjIpBtxBZ9ulhrRy5KlCqAm6WO5YwuJjlf2QIWRHKk-e-yHs/edit`
-2. In the function dropdown beside **Debug**, select `getGuestbookEntries` (not `doGet`).
-3. Click **Run**.
-4. In Google's authorization dialog, select `fishdan@gmail.com`, choose **Review permissions**, then choose **Allow**.
-5. Wait for the execution to complete successfully.
+Public site:
 
-This grants the new Sheets scope and creates/configures the private `Visitors` worksheet. No browser-editor code changes are needed.
+https://script.google.com/macros/s/AKfycbxXJwRMIr1CxEgSZcl3X45W4Nkd7NH6Xl__R6rjKqPzHDCKsGREwzAwXbQ62bCB3iyfbA/exec
+
+If `npm run doctor` says the site is 403 or the view page needs Google Sheets access:
+
+1. Sign in as the site owner.
+2. Open https://script.google.com/macros/s/AKfycbxXJwRMIr1CxEgSZcl3X45W4Nkd7NH6Xl__R6rjKqPzHDCKsGREwzAwXbQ62bCB3iyfbA/exec?page=view
+3. Approve Google access if Google asks.
+4. If signed-out visitors still cannot load the site: Deploy → Manage deployments → edit the web app → **Who has access: Anyone** → Deploy.
+5. Re-run `npm run doctor`.
+
+Anonymous visitors can then use **Sign the guestbook** and **See the guestbook** on that same `/exec` URL.
