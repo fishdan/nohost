@@ -1,5 +1,13 @@
 # Handoff
 
+## 2026-08-28 — Visitor guestbook authorization
+
+- Branch: `main`; visitor guestbook PR #4 is merged and its Apps Script deployment contains the feature.
+- Current task: the owner must grant the one-time Spreadsheet permission before anonymous visitor requests can use the guestbook.
+- Human action: sign in as `fishdan@gmail.com`, open the Apps Script project, select `getGuestbookEntries`, click Run, and approve the Google authorization prompt.
+- No browser-editor code changes are required. The action creates/configures the private `Visitors` worksheet through the deployed source.
+- See root `handoff.md` for the exact click-by-click instructions.
+
 No active handoff. The hello-world specification and browser verification are complete.
 
 ## 2026-08-16 — Public deployment complete

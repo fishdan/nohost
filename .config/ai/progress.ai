@@ -1,5 +1,10 @@
 # Progress Log
 
+## 2026-08-28 — Guestbook authorization handoff
+
+- Added `handoff.md` with the owner-only Apps Script authorization steps required to activate the deployed guestbook.
+- Updated `.config/ai/handoff.ai` with the same current task and completion criteria.
+
 ## 2026-08-28 — Visitor guestbook implementation and deployment
 
 - Added routed **Sign the guestbook** and **See the guestbook** pages backed by server-side Apps Script functions.
