@@ -5,12 +5,17 @@
     <?!= include('styles'); ?>
   </head>
   <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="site-mark" href="<?= webAppUrl ?>" target="_top">nohost</a>
+        <nav aria-label="Site">
+          <a href="<?= webAppUrl ?>" target="_top"<? if (page === 'home') { ?> aria-current="page"<? } ?>>Home</a>
+          <a href="<?= webAppUrl ?>?page=sign" target="_top"<? if (page === 'sign') { ?> aria-current="page"<? } ?>>Sign the guestbook</a>
+          <a href="<?= webAppUrl ?>?page=view" target="_top"<? if (page === 'view') { ?> aria-current="page"<? } ?>>See the guestbook</a>
+        </nav>
+      </div>
+    </header>
     <main class="site-shell">
-      <p class="eyebrow">Community guestbook</p>
-      <nav aria-label="Guestbook">
-        <a href="<?= webAppUrl ?>?page=sign" target="_top">Sign the guestbook</a>
-        <a href="<?= webAppUrl ?>?page=view" target="_top">See the guestbook</a>
-      </nav>
       <? if (page === 'sign') { ?>
         <h1>Sign the guestbook</h1>
         <p class="intro">Tell us your name and the city you call home.</p>
@@ -31,12 +36,28 @@
           <ul id="guestbook-entries" class="guestbook-list" hidden></ul>
         </section>
       <? } else { ?>
-        <h1>Welcome</h1>
-        <p class="intro">Leave a hello, then see who has visited from around the world.</p>
-        <section class="card" aria-labelledby="next-heading">
-          <h2 id="next-heading">Join the guestbook</h2>
-          <p><a href="<?= webAppUrl ?>?page=sign" target="_top">Sign the guestbook</a> or <a href="<?= webAppUrl ?>?page=view" target="_top">see the guestbook</a>.</p>
-        </section>
+        <p class="eyebrow">Your public website</p>
+        <h1>Welcome to your own nohost</h1>
+        <p class="intro">This is a small public website that runs as a Google Apps Script web app. You do not need to be a programmer. If you have a Gmail account, you can have a site like this.</p>
+        <div class="stack">
+          <section class="card" aria-labelledby="what-heading">
+            <h2 id="what-heading">What this site is</h2>
+            <p>nohost is a starter website: a home page, a visitor guestbook, and a GitHub project you can change. Hello World was only the first version. New features publish to the same public link.</p>
+            <p><a href="<?= webAppUrl ?>?page=sign" target="_top">Sign the guestbook</a> or <a href="<?= webAppUrl ?>?page=view" target="_top">see the guestbook</a>.</p>
+          </section>
+          <section class="card" aria-labelledby="yours-heading">
+            <h2 id="yours-heading">Make it yours with AI</h2>
+            <p>Open the <a href="https://github.com/fishdan/nohost" target="_top">nohost GitHub project</a> in an AI coding assistant and say:</p>
+            <blockquote class="prompt">
+              <p>Read <code>start.ai</code> and keep going until <code>npm run doctor</code> prints <strong>Public site: visible</strong>. Ask me to click anything that needs a browser.</p>
+            </blockquote>
+            <ol>
+              <li>Turn on the Apps Script API and sign in with Google when the assistant asks.</li>
+              <li>Let it create <strong>one</strong> new Apps Script project for this checkout, then publish the public link.</li>
+              <li>After your site is live, ask the assistant for the changes you want. Review a pull request. GitHub deploys to the same <code>/exec</code> URL.</li>
+            </ol>
+          </section>
+        </div>
       <? } ?>
     </main>
     <script>window.NOHOST_WEB_APP_URL = <?!= JSON.stringify(webAppUrl || '') ?>;</script>
