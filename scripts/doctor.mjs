@@ -123,7 +123,7 @@ export function webAppExecUrl(deploymentId) {
   return `https://script.google.com/macros/s/${deploymentId}/exec`;
 }
 
-export const PUBLIC_HOME_MARKERS = ['Sign the guestbook', 'See the guestbook'];
+export const PUBLIC_HOME_MARKERS = ['Welcome to your own nohost', 'Sign the guestbook', 'See the guestbook'];
 export const PUBLIC_SIGN_MARKERS = ['guestbook-form'];
 export const PUBLIC_VIEW_MARKERS = ['guestbook-entries'];
 

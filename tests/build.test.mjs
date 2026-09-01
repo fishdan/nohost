@@ -6,9 +6,14 @@ test('build output contains the Apps Script entry point and page partials', asyn
   const code = await readFile('dist/Code.js', 'utf8');
   const page = await readFile('dist/index.html', 'utf8');
   const guestbookLogic = await readFile('dist/guestbook-logic.js', 'utf8');
+  assert.match(code, /Welcome to your own nohost/);
   assert.match(code, /function doGet\(event\)/);
   assert.match(code, /ScriptApp\.getService\(\)\.getUrl\(\)/);
   assert.match(code, /function createGuestbookSpreadsheet\(\)/);
+  assert.match(page, /site-header/);
+  assert.match(page, /Welcome to your own nohost/);
+  assert.match(page, /start\.ai/);
+  assert.match(page, /Public site: visible/);
   assert.match(page, /Sign the guestbook/);
   assert.match(page, /See the guestbook/);
   assert.match(page, /webAppUrl \?>\?page=sign/);

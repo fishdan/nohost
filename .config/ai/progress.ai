@@ -1,5 +1,12 @@
 # Progress Log
 
+## 2026-09-01 — Welcome site chrome
+
+- Added SpecKit `0.010-welcome-site`. Every page now has a sticky header with Home / Sign the guestbook / See the guestbook.
+- Home is **Welcome to your own nohost**: what the app is, and how to make a copy with an AI assistant using the README `start.ai` doctor prompt.
+- Guestbook sign and view pages keep their forms and lists. Colors stay on the existing `:root` palette.
+- Doctor home markers now include the welcome heading. Validation: `npm run build` and `npm test` (31 passing).
+
 ## 2026-09-01 — Canonical color palette in styles.html
 
 - Added SpecKit `0.009-color-palette`. The site’s named colors live as CSS custom properties on `:root` in `src/client/styles.html`, the existing HtmlService styles partial.

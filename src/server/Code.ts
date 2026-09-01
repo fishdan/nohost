@@ -11,7 +11,7 @@ function doGet(event: GoogleAppsScript.Events.DoGet): GoogleAppsScript.HTML.Html
   template.webAppUrl = ScriptApp.getService().getUrl();
   return template
     .evaluate()
-    .setTitle(page === 'sign' ? 'Sign the guestbook' : page === 'view' ? 'See the guestbook' : 'nohost Web App')
+    .setTitle(page === 'sign' ? 'Sign the guestbook' : page === 'view' ? 'See the guestbook' : 'Welcome to your own nohost')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }

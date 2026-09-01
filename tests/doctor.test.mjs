@@ -142,7 +142,7 @@ test('extractJsonValue ignores leading clasp spinner text', () => {
 });
 
 test('classifyAnonymousPage requires current home markers, not Hello World', () => {
-  const home = '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+  const home = '<h1>Welcome to your own nohost</h1><a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
   assert.equal(classifyAnonymousPage({ status: 200, body: home }, PUBLIC_HOME_MARKERS).ok, true);
   assert.equal(classifyPublicResponse({ status: 200, body: home }).ok, true);
   assert.equal(classifyAnonymousPage({ status: 200, body: '<h1>Hello, world!</h1>' }, PUBLIC_HOME_MARKERS).ok, false);
@@ -207,7 +207,7 @@ test('README and start.ai treat first-run as creating the master app', async () 
 });
 
 test('doctor fetches home, sign, and view on the printed /exec URL', async () => {
-  const home = '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+  const home = '<h1>Welcome to your own nohost</h1><a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
   const pages = {
     'https://script.google.com/macros/s/pub-id/exec': home,
     'https://script.google.com/macros/s/pub-id/exec?page=sign': '<form id="guestbook-form"></form>',
@@ -253,7 +253,7 @@ test('view-page Sheets denial uses owner-in-browser remediation', async () => {
       text: async () => {
         if (String(url).includes('page=view')) return 'Exception: You do not have permission to call SpreadsheetApp.create';
         if (String(url).includes('page=sign')) return '<form id="guestbook-form"></form>';
-        return '<a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
+        return '<h1>Welcome to your own nohost</h1><a href="?page=sign">Sign the guestbook</a><a href="?page=view">See the guestbook</a>';
       },
     }),
   });
