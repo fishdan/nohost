@@ -1,5 +1,12 @@
 # Progress Log
 
+## 2026-09-01 — Canonical color palette in styles.html
+
+- Added SpecKit `0.009-color-palette`. The site’s named colors live as CSS custom properties on `:root` in `src/client/styles.html`, the existing HtmlService styles partial.
+- Replaced hardcoded hex/rgb colors in rules with `var(...)`. Values are unchanged so the teal-on-light look stays the same.
+- Did not add a second include, JSON tokens, or a design-token build.
+- Validation: `npm run build` and `npm test` (31 passing).
+
 ## 2026-08-28 — Operability notes for future assistants
 
 - Recorded the Hello World / guestbook operational failures in `specs/0/0.008-master-app-operability/notes.md` (one master app, clasp login vs daily Gmail, Share vs web-app Anyone, Sheets 403, HtmlService iframe links, doctor, GitHub WIF).
